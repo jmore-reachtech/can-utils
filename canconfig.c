@@ -1,9 +1,7 @@
 /*
  * canutils/canconfig.c
  *
- * Copyright (C) 2005 
- *
- * - Marc Kleine-Budde, Pengutronix
+ * Copyright (C) 2005 Marc Kleine-Budde <mkl@pengutronix.de>, Pengutronix
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the version 2 of the GNU General Public License 
@@ -33,12 +31,13 @@
 #include <netinet/in.h>
 #include <netinet/ether.h>
 
-#include "can.h"
+#include <socket-can/can.h>
 
-
+#ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
-
-int              s;
+#endif
+				      
+int             s;
 struct ifreq	ifr;
 
 struct speed_map {

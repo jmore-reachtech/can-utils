@@ -11,7 +11,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-#include "can.h"
+#include <socket-can/can.h>
 
 extern int optind, opterr, optopt;
 
