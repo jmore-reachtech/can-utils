@@ -20,7 +20,10 @@ static int	running = 1;
 
 void print_usage(char *prg)
 {
-	fprintf(stderr, "Usage: %s [can-interface]\n", prg);
+	fprintf(stderr, "Usage: %s [can-interface] [Options]\n", prg);
+	fprintf(stderr, "Options: -f <family> (default PF_CAN = %d)\n", PF_CAN);
+	fprintf(stderr, "         -t <type>   (default SOCK_RAW = %d)\n", SOCK_RAW);
+	fprintf(stderr, "         -p <proto>  (default CAN_PROTO_RAW = %d)\n", CAN_PROTO_RAW);
 }
 
 void sigterm(int signo)
