@@ -1,12 +1,11 @@
-.TH CANDUMP 8 "13 March 2005" "canutils" "Linux Programmer's Manual"
+.TH CANSEND 8 "13 March 2005" "canutils" "Linux Programmer's Manual"
 .SH NAME
-candump \- dump messages from CAN bus interfaces to stdout
+cansend \- send data on a CAN interface
 .SH SYNOPSIS
-.B "candump <interface> [Options]"
+.B "send -i <interface> [Options] message"
 .br
 .SH DESCRIPTION
-candump receives messages from a CAN (Controller Area Network) bus
-interface and dumps it to stdout. 
+cansend sends messages on a CAN (Controller Area Network) bus interface. 
 
 .SH ARGUMENTS and OPTIONS
 .TP
@@ -24,10 +23,13 @@ is 3.
 .TP
 .B -p proto
 Specifies the protocol to sniff for; default is CAN_PROTO_RAW, which is
+.TP
+.B -v
+Verbose mode. 
 0. 
 .br
 .SH SEE ALSO
-- ifconfig(8), canconfig(8), canecho(8)
+- ifconfig(8), canconfig(8), candump(8), cansend(8)
 .br
 - http://www.pengutronix.de/software/socket-can/ (Socket-CAN Project)
 .SH AUTHORS

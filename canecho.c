@@ -24,6 +24,7 @@ void print_usage(char *prg)
 	fprintf(stderr, "Options: -f <family> (default PF_CAN = %d)\n", PF_CAN);
 	fprintf(stderr, "         -t <type>   (default SOCK_RAW = %d)\n", SOCK_RAW);
 	fprintf(stderr, "         -p <proto>  (default CAN_PROTO_RAW = %d)\n", CAN_PROTO_RAW);
+	fprintf(stderr, "         -v          (verbose)\n");
 }
 
 void sigterm(int signo)

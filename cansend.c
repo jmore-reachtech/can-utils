@@ -21,6 +21,15 @@ void sigterm(int signo)
 	running = 0;
 }
 
+void print_usage(char *prg)
+{
+        fprintf(stderr, "Usage: %s -i [can-interface] [Options]\n", prg);
+        fprintf(stderr, "Options: -f <family> (default PF_CAN = %d)\n", PF_CAN);
+        fprintf(stderr, "         -t <type>   (default SOCK_RAW = %d)\n", SOCK_RAW);
+        fprintf(stderr, "         -p <proto>  (default CAN_PROTO_RAW = %d)\n", CAN_PROTO_RAW);
+        fprintf(stderr, "         -v          (verbose)\n");
+}
+
 int main(int argc, char **argv)
 {
 	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
@@ -63,6 +72,11 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
+
+	if (optind == argc) {
+		print_usage(basename(argv[0]));
+		exit(0);
+        }
 	
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "No Interface supplied\n");

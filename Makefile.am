@@ -11,7 +11,7 @@ canconfig_SOURCES = canconfig.c
 
 EXTRA_DIST = autogen.sh can.h
 
-man_MANS = canconfig.8 candump.8
+man_MANS = canconfig.8 candump.8 canecho.8 cansend.8
 
 # info_TEXINFOS = can.texinfo
 
