@@ -22,13 +22,14 @@ man_MANS = canconfig.8 candump.8 canecho.8 cansend.8
 
 # info_TEXINFOS = can.texinfo
 
-MAINTAINERCLEANFILES=		\
-	include/can_config.h.in	\
-	configure		\
-	Makefile.in		\
-	config.guess		\
-	config.sub		\
-	ltmain.sh		\
-	aclocal.m4
-
+MAINTAINERCLEANFILES = \
+	configure \
+	Makefile.in \
+	aclocal.m4 \
+	config/autoconf/depcomp \
+	config/autoconf/missing \
+	config/autoconf/config.guess \
+	config/autoconf/config.sub \
+	config/autoconf/ltmain.sh \
+	config/autoconf/install-sh
 

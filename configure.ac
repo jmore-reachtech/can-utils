@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 
-AC_INIT([canutils], [1.0.1], [socket-can@@pengutronix.de])
+AC_INIT([canutils], [1.0.1], [socket-can@pengutronix.de])
 AC_CONFIG_HEADERS([include/can_config.h])
 AC_CONFIG_AUX_DIR([config/autoconf])
 AC_CONFIG_MACRO_DIR([config/m4])
