@@ -10,21 +10,9 @@ canconfig \- configure a CAN bus interface
 .br
 .B "canconfig <interface> state"
 .SH DESCRIPTION
-.B canconfig
-
-is used to configure the kernel-resident CAN (Controller Area Network)
+canconfig is used to configure the kernel-resident CAN (Controller Area Network)
 interfaces. As CAN cards are network devices the basic configuration
 options can be done with ifconfig. 
-
-
-usage:
-        canconfig <dev> baudrate { BR | BTR }
-                BR := { 10 | 20 | 50 | 100 | 125 | 250 | 500 | 800 | 1000 }
-                BTR := btr <btr0> [ <btr1> [ <btr2> ] ]
-        canconfig <dev> mode MODE
-                MODE := { start }
-        canconfig <dev> state
-r
 
 .SH ARGUMENTS
 .TP
