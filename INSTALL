@@ -1,0 +1,42 @@
+Copyright (C) 1994, 1995, 1996, 1999, 2000, 2001, 2002 Free Software
+Foundation, Inc.
+
+   This file is free documentation; the Free Software Foundation gives
+unlimited permission to copy, distribute and modify it.
+
+canutils Installation
+=====================
+
+To install canutils the usual autotools triple can be used: 
+
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system. 
+
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
+
+  2. Type `make' to compile the package.
+
+  3. Optionally, type `make check' to run any self-tests that come with
+     the package.
+
+  4. Type `make install' to install the programs and any data files and
+     documentation.
+
+  5. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
+
+For further options of the configure script please have a look at the
+output of 'configure --help' or read the autotools manual. 
+
+Optional Features
+=================
+
+canutils have no optional features at the moment. 
+
