@@ -9,7 +9,7 @@ canecho_SOURCES   = canecho.c
 cansend_SOURCES   = cansend.c
 canconfig_SOURCES = canconfig.c
 
-EXTRA_DIST = autogen.sh can.h
+EXTRA_DIST = autogen.sh can.h canconfig.8 candump.8 canecho.8 cansend.8
 
 man_MANS = canconfig.8 candump.8 canecho.8 cansend.8
 
