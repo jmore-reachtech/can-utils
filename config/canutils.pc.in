@@ -6,4 +6,4 @@ includedir=@includedir@
 Name: canutils
 Description: ifconfig like tool for can devices
 Version: @VERSION@
-Cflags: -I${includedir}/socket-can
+Cflags: -I${includedir}
