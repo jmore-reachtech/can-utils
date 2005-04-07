@@ -1,16 +1,25 @@
 #!/bin/sh
+ACLOCAL=${ACLOCAL:=aclocal}
+AUTOHEADER=${AUTOHEADER:=autoheader}
+AUTOMAKE=${AUTOMAKE:=automake}
+AUTOCONF=${AUTOCONF:=autoconf}
 
-echo "running aclocal (tested with 1.7.9)..."
-aclocal -I config/m4
+echo use aclocal: $ACLOCAL
+echo use autoheader: $AUTOHEADER
+echo use automake: $AUTOMAKE
+echo use autoconf: $AUTOCONF
 
-echo "running libtoolize (tested with 1.5.6)..."
-libtoolize --force
+$ACLOCAL --version | \
+   awk -vPROG="aclocal" -vVERS=1.7\
+   '{if ($1 == PROG) {gsub ("-.*","",$4); if ($4 < VERS) print PROG" < version "VERS"\nThis may result in errors\n"}}'
 
-echo "running autoheader"
-autoheader 
+$AUTOMAKE --version | \
+   awk -vPROG="automake" -vVERS=1.7\
+   '{if ($1 == PROG) {gsub ("-.*","",$4); if ($4 < VERS) print PROG" < version "VERS"\nThis may result in errors\n"}}'
 
-echo "running automake (tested with 1.7.9)..."
-automake --add-missing --gnu -Wall
+$ACLOCAL -I config/m4 && \
+libtoolize --force && \
+$AUTOHEADER && \
+$AUTOMAKE --gnu --add-missing -Wall && \
+$AUTOCONF -Wall
 
-echo "running autoconf (tested with 2.59)..."
-autoconf

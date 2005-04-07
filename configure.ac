@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 
-AC_INIT([canutils], [1.0.1], [socket-can@pengutronix.de])
+AC_INIT([canutils], [1.0.2], [socket-can@pengutronix.de])
 AC_CONFIG_HEADERS([include/can_config.h])
 AC_CONFIG_AUX_DIR([config/autoconf])
 AC_CONFIG_MACRO_DIR([config/m4])
@@ -36,6 +36,9 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CONFIG_FILES([ \
 	Makefile \
+	config/canutils.pc \
+	config/Makefile \
 	include/Makefile \
 	])
+
 AC_OUTPUT

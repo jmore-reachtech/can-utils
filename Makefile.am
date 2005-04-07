@@ -1,11 +1,7 @@
-#
-# Binary programs
-#
-
 bin_PROGRAMS = candump canecho cansend
 sbin_PROGRAMS = canconfig
 
-SUBDIRS = include
+SUBDIRS = include config
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include
