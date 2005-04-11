@@ -1,28 +1,22 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-
 AC_PREREQ(2.59)
 
 AC_INIT([canutils], [1.0.2], [socket-can@pengutronix.de])
 AC_CONFIG_HEADERS([include/can_config.h])
-AC_CONFIG_AUX_DIR([config/autoconf])
-AC_CONFIG_MACRO_DIR([config/m4])
 AC_CONFIG_SRCDIR([cansend.c])
+AC_CONFIG_MACRO_DIR([config/m4])
+AC_CONFIG_AUX_DIR([config/autoconf])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
-AC_PROG_INSTALL
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
 AM_INIT_AUTOMAKE([foreign no-exeext dist-bzip2])
 AM_MAINTAINER_MODE
-AC_PROG_LIBTOOL
-AM_PROG_AS
-AC_SUBST(LD)
-AM_INIT_AUTOMAKE
-
 
 # Checks for libraries.
 
