@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	if (argv[optind+1] != NULL) {
 		frame.can_dlc = strlen(argv[optind+1]);
 		frame.can_dlc = frame.can_dlc > 8 ? 8 : frame.can_dlc;
-		strncpy(frame.payload.byte, argv[optind+1],8);
+		strncpy(frame.payload.data, argv[optind+1],8);
 	} else {
 		frame.can_dlc = 0;
 	}
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 	printf("id: %d ",frame.can_id);
 	printf("dlc: %d\n",frame.can_dlc);
 	for(i = 0; i < frame.can_dlc; i++)
-		printf("0x%02x ",frame.payload.byte[i]);
+		printf("0x%02x ",frame.payload.data[i]);
 	printf("\n");
 
 	num = 1;

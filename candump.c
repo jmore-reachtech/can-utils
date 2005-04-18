@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 
 			printf("[%d] ", frame.can_dlc);
 			for (i = 0; i < frame.can_dlc; i++) {
-				printf("%02x ", frame.payload.byte[i]);
+				printf("%02x ", frame.payload.data[i]);
 			}
 			if (frame.can_id & CAN_FLAG_RTR)
 				printf("remote request");

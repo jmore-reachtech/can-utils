@@ -3,9 +3,7 @@
  *
  * Copyright (C) 2004, 2005
  *
- * - Jan Kiszka, Uni Hannover
  * - Robert Schwebel, Benedikt Spranger, Marc Kleine-Budde, Pengutronix
- * - Uwe Koppe, MicroControl GmbH 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the version 2 of the GNU General Public License 
@@ -21,16 +19,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef CAN_H
-#define CAN_H
+#ifndef _SOCKET_CAN_CAN_H
+#define _SOCKET_CAN_CAN_H
+
+//#include <stdint.h>
 
 #define CAN_ID_EXT_MASK   0x1FFFFFFF	/* contains CAN id */
 #define CAN_ID_STD_MASK   0x000007FF
 #define CAN_FLAG_ALL      0x20000000	/* filter all messages */
 #define CAN_FLAG_RTR      0x40000000	/* remote transmission flag*/
 #define CAN_FLAG_EXTENDED 0x80000000	/* extended frame */
-
-#define CANIOCTYPE 0x23
 
 #define SIOCSCANBAUDRATE	(SIOCPROTOPRIVATE + 0)
 #define SIOCGCANBAUDRATE	(SIOCPROTOPRIVATE + 1)
@@ -185,8 +183,6 @@ union can_settings {
 
 enum CAN_PROTO {
 	CAN_PROTO_RAW,
-/* 	CAN_PROTO_FOO, */
-/* 	CAN_PROTO_BAR, */
 	CAN_PROTO_MAX,
 };
 
@@ -200,10 +196,12 @@ struct can_frame {
 	int	can_id;
 	int	can_dlc;
 	union {
-		unsigned long long	msgbits;
-		unsigned long		dword[2];
-		unsigned char		byte[8];
+		int64_t		data_64;
+		int32_t		data_32[2];
+		int16_t		data_16[4];
+		int8_t	        data_8[8];
+		int8_t		data[8]; 		/* shortcut */
 	} payload;
 };
 
-#endif /* CAN_H */
+#endif /* !_SOCKET_CAN_CAN_H */

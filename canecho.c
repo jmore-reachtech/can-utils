@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 			} else {
 				printf("[%d]", frame.can_dlc);
 				for (i = 0; i < frame.can_dlc; i++) {
-					printf(" %02x", frame.payload.byte[i]);
+					printf(" %02x", frame.payload.data[i]);
 				}
 			}
 			printf("\n");

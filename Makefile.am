@@ -23,8 +23,6 @@ EXTRA_DIST = \
 
 man_MANS = canconfig.8 candump.8 canecho.8 cansend.8
 
-# info_TEXINFOS = can.texinfo
-
 MAINTAINERCLEANFILES = \
 	configure \
 	Makefile.in \
