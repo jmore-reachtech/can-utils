@@ -95,9 +95,9 @@ int main(int argc, char **argv)
 			return 1;
 		} else {
 			if (frame.can_id & CAN_FLAG_EXTENDED)
-				printf("<%08x> ", frame.can_id & CAN_ID_EXT_MASK);
+				printf("<0x%08x> ", frame.can_id & CAN_ID_EXT_MASK);
 			else
-				printf("<%03x> ", frame.can_id & CAN_ID_STD_MASK);
+				printf("<0x%03x> ", frame.can_id & CAN_ID_STD_MASK);
 
 			printf("[%d] ", frame.can_dlc);
 			for (i = 0; i < frame.can_dlc; i++) {
