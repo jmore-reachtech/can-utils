@@ -23,10 +23,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
+#include <string.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/ether.h>
@@ -117,11 +120,11 @@ void do_show_baudrate(int argc, char* argv[])
 	if (value != 0)
 		fprintf(stdout,
 			"%s: baudrate %d btr 0x%02x 0x%02x 0x%02x\n",
-			&ifr.ifr_name, value, br->btr[0], br->btr[1], br->btr[2]);
+			ifr.ifr_name, value, br->btr[0], br->btr[1], br->btr[2]);
 	else
 		fprintf(stdout,
 			"%s: baudrate <unknown> btr 0x%02x 0x%02x 0x%02x\n",
-			&ifr.ifr_name, br->btr[0], br->btr[1], br->btr[2]);
+			ifr.ifr_name, br->btr[0], br->btr[1], br->btr[2]);
 }
 
 
@@ -207,7 +210,7 @@ void do_show_state(int argc, char *argv[])
 	}
 
 	state = settings->state;
-	fprintf(stdout, "%s: state ", &ifr.ifr_name);
+	fprintf(stdout, "%s: state ", ifr.ifr_name);
 	switch (state) {
 	case CAN_STATE_BUS_PASSIVE:
 		str = "bus passive";

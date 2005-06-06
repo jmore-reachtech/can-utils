@@ -23,7 +23,7 @@ void sigterm(int signo)
 
 void print_usage(char *prg)
 {
-        fprintf(stderr, "Usage: %s -i [can-interface] [Options]\n", prg);
+        fprintf(stderr, "Usage: %s <can-interface> [Options] -i <identifier> <can-msg>\n", prg);
         fprintf(stderr, "Options: -f <family> (default PF_CAN = %d)\n", PF_CAN);
         fprintf(stderr, "         -t <type>   (default SOCK_RAW = %d)\n", SOCK_RAW);
         fprintf(stderr, "         -p <proto>  (default CAN_PROTO_RAW = %d)\n", CAN_PROTO_RAW);
@@ -46,15 +46,15 @@ int main(int argc, char **argv)
 	while ((opt = getopt(argc, argv, "f:t:p:vi:")) != -1) {
 		switch (opt) {
 			case 'f':
-				family = atoi(optarg);
+				family = strtoul(optarg, NULL, 0);
 				break;
 
 			case 't':
-				type = atoi(optarg);
+				type = strtoul(optarg, NULL, 0);
 				break;
 
 			case 'p':
-				proto = atoi(optarg);
+				proto = strtoul(optarg, NULL, 0);
 				break;
 
 			case 'v':
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 				break;
 			
 			case 'i':
-				frame.can_id = atoi(optarg);
+				frame.can_id = strtoul(optarg, NULL, 0);
 
 			case '?':
 				break;

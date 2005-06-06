@@ -46,15 +46,15 @@ int main(int argc, char **argv)
 	while ((opt = getopt(argc, argv, "f:t:p:m:v:")) != -1) {
 		switch (opt) {
 			case 'f':
-				family = atoi(optarg);
+				family = strtoul(optarg, NULL, 0);
 				break;
 
 			case 't':
-				type = atoi(optarg);
+				type = strtoul(optarg, NULL, 0);
 				break;
 
 			case 'p':
-				proto = atoi(optarg);
+				proto = strtoul(optarg, NULL, 0);
 				break;
 
 			case '?':
@@ -109,5 +109,5 @@ int main(int argc, char **argv)
 		}
 	}
 
-	return 0;
+	exit (EXIT_SUCCESS);
 }

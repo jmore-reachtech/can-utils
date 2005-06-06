@@ -2,7 +2,7 @@
 .SH NAME
 cansend \- send data on a CAN interface
 .SH SYNOPSIS
-.B "send -i <interface> [Options] message"
+.B "send [Options] <interface> -i  message"
 .br
 .SH DESCRIPTION
 cansend sends messages on a CAN (Controller Area Network) bus interface. 
@@ -22,7 +22,8 @@ Specifies the socket type to be sniffed on. Default is SOCK_RAW, which
 is 3. 
 .TP
 .B -p proto
-Specifies the protocol to sniff for; default is CAN_PROTO_RAW, which is
+Specifies the protocol to sniff for; default is CAN_PROTO_RAW, which
+is 0.
 .TP
 .B -v
 Verbose mode. 

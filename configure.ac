@@ -10,6 +10,8 @@ AC_CONFIG_AUX_DIR([config/autoconf])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
+CFLAGS="${CFLAGS} -Wall -O2 -g"
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
