@@ -29,7 +29,7 @@ void print_usage(char *prg)
         fprintf(stderr, "Usage: %s <can-interface> [Options] <can-msg>\n"
 	                "<can-msg> can consist of up to 8 bytes given as a space separated list\n"
                         "Options:\n"
-			" -i, --identifier=ID   CAN Identifier\n"
+			" -i, --identifier=ID   CAN Identifier (default = 1)\n"
 	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
                         " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
@@ -69,6 +69,8 @@ int main(int argc, char **argv)
 		{ 0, 0, 0, 0},
 	};
 
+	frame.can_id = 1;
+
 	while ((opt = getopt_long(argc, argv, "hf:t:p:vi:l", long_options, NULL)) != -1) {
 		switch (opt) {
 			case 'h':
@@ -98,6 +100,7 @@ int main(int argc, char **argv)
 				break;
 			case 'i':
 				frame.can_id = strtoul(optarg, NULL, 0);
+				break;
 
 			case VERSION_OPTION:
 				printf("cansend %s\n",VERSION);
