@@ -114,6 +114,7 @@ int main(int argc, char **argv)
 	strcpy(ifr.ifr_name, argv[optind]);
 	ioctl(s, SIOCGIFINDEX, &ifr);
 	addr.can_ifindex = ifr.ifr_ifindex;
+	addr.can_id = CAN_FLAG_ALL;
 
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("bind");
