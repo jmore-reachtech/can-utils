@@ -29,9 +29,10 @@ void print_usage(char *prg)
 {
         fprintf(stderr, "Usage: %s <can-interface> [Options]\n"
                         "Options:\n"
-	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
-                        " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
+	                " -f, --family=FAMILY   protocol family (default PF_CAN = %d)\n"
+                        " -t, --type=TYPE       socket type, see man 2 socket (default SOCK_RAW = %d)\n"
                         " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
+			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
 				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
 }
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
 		{ 0, 0, 0, 0},
 	};
 
-	while ((opt = getopt_long(argc, argv, "f:t:p:m:v:", long_options, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "f:t:p:", long_options, NULL)) != -1) {
 		switch (opt) {
 			case 'h':
 				print_usage(basename(argv[0]));
