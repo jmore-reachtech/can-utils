@@ -30,12 +30,15 @@ void print_usage(char *prg)
 	                "<can-msg> can consist of up to 8 bytes given as a space separated list\n"
                         "Options:\n"
 			" -i, --identifier=ID   CAN Identifier (default = 1)\n"
+			" -i  --rtr             send remote request\n"
+			" -e  --extended        send extended frame\n"
 	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
                         " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
 			" -l                    send message infinite times\n"
 			"     --loop=COUNT      send message COUNT times\n"
                         " -v, --verbose         be verbose\n"
+			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
 				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
 }
@@ -49,7 +52,7 @@ int main(int argc, char **argv)
 {
 	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
 	struct sockaddr_can addr;
-	int s, opt, ret, i, dlc = 0;
+	int s, opt, ret, i, dlc = 0, rtr = 0, extended = 0;
 	struct can_frame frame;
 	int verbose = 0;
 	int loopcount = 1, infinite = 0;
@@ -61,6 +64,8 @@ int main(int argc, char **argv)
 	struct option		long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "identifier", required_argument, 0, 'i'},
+		{ "rtr", no_argument, 0, 'r'},
+		{ "extended", no_argument, 0, 'e'},
 		{ "family", required_argument, 0, 'f' },
 		{ "protocol", required_argument, 0, 'p' },
 		{ "type", required_argument, 0, 't' },
@@ -72,7 +77,7 @@ int main(int argc, char **argv)
 
 	frame.can_id = 1;
 
-	while ((opt = getopt_long(argc, argv, "hf:t:p:vi:l", long_options, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hf:t:p:vi:lre", long_options, NULL)) != -1) {
 		switch (opt) {
 			case 'h':
 				print_usage(basename(argv[0]));
@@ -93,6 +98,7 @@ int main(int argc, char **argv)
 			case 'v':
 				verbose = 1;
 				break;
+
 			case 'l':
 				if(optarg)
 					loopcount = strtoul(optarg, NULL, 0);
@@ -101,6 +107,14 @@ int main(int argc, char **argv)
 				break;
 			case 'i':
 				frame.can_id = strtoul(optarg, NULL, 0);
+				break;
+
+			case 'r':
+				rtr = 1;
+				break;
+
+			case 'e':
+				extended = 1;
 				break;
 
 			case VERSION_OPTION:
@@ -153,6 +167,12 @@ int main(int argc, char **argv)
 			break;
 	}
 	frame.can_dlc = dlc;
+
+	if(rtr)
+		frame.can_id |= CAN_FLAG_RTR;
+
+	if(extended)
+		frame.can_id |= CAN_FLAG_EXTENDED;
 
 	if(verbose) {
 		printf("id: %d ",frame.can_id);
