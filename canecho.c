@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <libgen.h>
+#include <getopt.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -12,19 +13,28 @@
 #include <net/if.h>
 
 #include <socket-can/can.h>
+#include <can_config.h>
 
 extern int optind, opterr, optopt;
 
 static int	s = -1;
 static int	running = 1;
 
+enum
+{
+	VERSION_OPTION = CHAR_MAX + 1,
+};
+
 void print_usage(char *prg)
 {
-	fprintf(stderr, "Usage: %s [can-interface] [Options]\n", prg);
-	fprintf(stderr, "Options: -f <family> (default PF_CAN = %d)\n", PF_CAN);
-	fprintf(stderr, "         -t <type>   (default SOCK_RAW = %d)\n", SOCK_RAW);
-	fprintf(stderr, "         -p <proto>  (default CAN_PROTO_RAW = %d)\n", CAN_PROTO_RAW);
-	fprintf(stderr, "         -v          (verbose)\n");
+        fprintf(stderr, "Usage: %s <can-interface> [Options]\n"
+                        "Options:\n"
+	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
+                        " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
+                        " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
+                        " -v, --verbose         be verbose\n"
+			"     --version         print version information and exit\n",
+				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
 }
 
 void sigterm(int signo)
@@ -46,7 +56,17 @@ int main(int argc, char **argv)
 	signal(SIGTERM, sigterm);
 	signal(SIGHUP, sigterm);
 
-	while ((opt = getopt(argc, argv, "f:t:p:v")) != -1) {
+	struct option		long_options[] = {
+		{ "help", no_argument, 0, 'h' },
+		{ "family", required_argument, 0, 'f' },
+		{ "protocol", required_argument, 0, 'p' },
+		{ "type", required_argument, 0, 't' },
+		{ "version", no_argument, 0, VERSION_OPTION},
+		{ "verbose", no_argument, 0, 'v'},
+		{ 0, 0, 0, 0},
+	};
+
+	while ((opt = getopt_long(argc, argv, "hf:t:p:v", long_options, NULL)) != -1) {
 		switch (opt) {
 			case 'f':
 				family = atoi(optarg);
@@ -64,8 +84,13 @@ int main(int argc, char **argv)
 				verbose = 1;
 				break;
 
-			case '?':
-				break;
+			case 'h':
+				print_usage(basename(argv[0]));
+				exit(0);
+
+			case VERSION_OPTION:
+				printf("canecho %s\n",VERSION);
+				exit(0);
 
 			default:
 				fprintf(stderr, "Unknown option %c\n", opt);
