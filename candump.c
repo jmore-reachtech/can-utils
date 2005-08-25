@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 				break;
 
 			case VERSION_OPTION:
-				printf("canecho %s\n",VERSION);
+				printf("candump %s\n",VERSION);
 				exit(0);
 
 			default:
