@@ -33,6 +33,7 @@ void print_usage(char *prg)
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
                         " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
                         " -v, --verbose         be verbose\n"
+			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
 				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
 }
