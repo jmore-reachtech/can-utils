@@ -1,4 +1,4 @@
-bin_PROGRAMS = candump canecho cansend
+bin_PROGRAMS = candump canecho cansend cansequence
 sbin_PROGRAMS = canconfig
 
 SUBDIRS = include config
@@ -11,6 +11,7 @@ candump_SOURCES   = candump.c
 canecho_SOURCES   = canecho.c
 cansend_SOURCES   = cansend.c
 canconfig_SOURCES = canconfig.c
+cansequence_SOURCES = cansequence.c
 
 EXTRA_DIST = \
 	autogen.sh \
