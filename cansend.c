@@ -63,6 +63,7 @@ int main(int argc, char **argv)
 		{ "identifier", required_argument, 0, 'i'},
 		{ "family", required_argument, 0, 'f' },
 		{ "protocol", required_argument, 0, 'p' },
+		{ "type", required_argument, 0, 't' },
 		{ "version", no_argument, 0, VERSION_OPTION},
 		{ "verbose", no_argument, 0, 'v'},
 		{ "loop", required_argument, 0, 'l'},
@@ -105,9 +106,6 @@ int main(int argc, char **argv)
 			case VERSION_OPTION:
 				printf("cansend %s\n",VERSION);
 				exit(0);
-
-			case '?':
-				break;
 
 			default:
 				fprintf(stderr, "Unknown option %c\n", opt);
