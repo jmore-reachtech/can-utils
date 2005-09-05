@@ -30,7 +30,7 @@ void print_usage(char *prg)
 	                "<can-msg> can consist of up to 8 bytes given as a space separated list\n"
                         "Options:\n"
 			" -i, --identifier=ID   CAN Identifier (default = 1)\n"
-			" -i  --rtr             send remote request\n"
+			" -r  --rtr             send remote request\n"
 			" -e  --extended        send extended frame\n"
 	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
