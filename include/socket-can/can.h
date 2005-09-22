@@ -196,11 +196,15 @@ struct can_frame {
 	int	can_id;
 	int	can_dlc;
 	union {
-		int64_t		data_64;
-		int32_t		data_32[2];
-		int16_t		data_16[4];
-		int8_t	        data_8[8];
-		int8_t		data[8]; 		/* shortcut */
+                int64_t    data_64;
+                int32_t    data_32[2];
+                int16_t    data_16[4];
+                int8_t     data_8[8];
+		u_int64_t  data_u64;
+		u_int32_t  data_u32[2];
+		u_int16_t  data_u16[4];
+		u_int8_t   data_u8[8];
+		int8_t     data[8]; 		/* shortcut */
 	} payload;
 };
 
