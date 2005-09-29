@@ -18,7 +18,6 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
 AM_INIT_AUTOMAKE([foreign no-exeext dist-bzip2])
-AM_MAINTAINER_MODE
 
 # Checks for libraries.
 
