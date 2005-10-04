@@ -23,6 +23,7 @@ static int	running = 1;
 enum
 {
 	VERSION_OPTION = CHAR_MAX + 1,
+	FILTER_OPTION = CHAR_MAX + 2,
 };
 
 void print_usage(char *prg)
@@ -32,6 +33,8 @@ void print_usage(char *prg)
 	                " -f, --family=FAMILY   protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       socket type, see man 2 socket (default SOCK_RAW = %d)\n"
                         " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
+			"     --filter=id:mask[:id:mask]...\n"
+			"                       apply filter\n"
 			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
 				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
@@ -42,6 +45,23 @@ void sigterm(int signo)
 	running = 0;
 }
 
+static struct can_filter *filter = NULL;
+static int filter_count = 0;
+
+int add_filter(u_int32_t id, u_int32_t mask)
+{
+	filter = realloc(filter, sizeof(struct can_filter) * (filter_count + 1));
+	if(!filter)
+		return -1;
+
+	filter[filter_count].can_id = id;
+	filter[filter_count].can_mask = mask;
+	filter_count++;
+
+	printf("id: 0x%08x mask: 0x%08x\n",id,mask);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
@@ -50,6 +70,8 @@ int main(int argc, char **argv)
 	struct can_frame frame;
 	int nbytes, i;
 	struct ifreq ifr;
+	char *ptr;
+	u_int32_t id, mask;
 
 	signal(SIGTERM, sigterm);
 	signal(SIGHUP, sigterm);
@@ -59,6 +81,7 @@ int main(int argc, char **argv)
 		{ "family", required_argument, 0, 'f' },
 		{ "protocol", required_argument, 0, 'p' },
 		{ "type", required_argument, 0, 't' },
+		{ "filter", required_argument, 0, FILTER_OPTION },
 		{ "version", no_argument, 0, VERSION_OPTION},
 		{ 0, 0, 0, 0},
 	};
@@ -79,6 +102,25 @@ int main(int argc, char **argv)
 
 			case 'p':
 				proto = strtoul(optarg, NULL, 0);
+				break;
+
+			case FILTER_OPTION:
+				ptr = optarg;
+				while(1) {
+					id = strtoul(ptr, NULL, 0);
+					ptr = strchr(ptr, ':');
+					if(!ptr) {
+						fprintf(stderr, "filter must be applied in the form id:mask[:id:mask]...\n");
+						exit(1);
+					}
+					ptr++;
+					mask = strtoul(ptr, NULL, 0);
+					ptr = strchr(ptr, ':');
+					add_filter(id,mask);
+					if(!ptr)
+						break;
+					ptr++;
+				}
 				break;
 
 			case VERSION_OPTION:
@@ -112,6 +154,13 @@ int main(int argc, char **argv)
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("bind");
 		return 1;
+	}
+
+	if(filter) {
+		if(setsockopt(s, SOL_CAN_RAW, SO_CAN_SET_FILTER, filter, filter_count * sizeof(struct can_filter)) != 0) {
+			perror("setsockopt");
+			exit(1);
+		}
 	}
 
 	while (running) {

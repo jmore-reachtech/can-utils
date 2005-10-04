@@ -208,4 +208,14 @@ struct can_frame {
 	} payload;
 };
 
+struct can_filter {
+	u_int32_t	can_id;
+	u_int32_t	can_mask;
+};
+#define SO_CAN_SET_FILTER 1
+#define SO_CAN_UNSET_FILTER 2
+
+#define SOL_CAN_BASE	100
+#define SOL_CAN_RAW	(SOL_CAN_BASE + CAN_PROTO_RAW)
+
 #endif /* !_SOCKET_CAN_CAN_H */
