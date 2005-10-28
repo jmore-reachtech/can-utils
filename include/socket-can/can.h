@@ -87,10 +87,9 @@ enum CAN_BAUD {
    */
    CAN_BAUD_MAX,
 
-   /*!
-   ** Use values for btr0, btr1 and btr2
-   */
-   CAN_BAUD_BTR = 0x80,
+   CAN_BAUD_BTR_SJA1000 = 0x80,
+   CAN_BAUD_BTR_C_CAN,
+   CAN_BAUD_BTR_NIOS,
 };
 
 
@@ -165,10 +164,34 @@ enum CAN_STATE {
 	CAN_STATE_ERR_ACK   = 0x50
 };
 
+struct can_baudrate_sja1000 {
+	u_int8_t	brp;
+	u_int8_t	sjw;
+	u_int8_t	tseg1;
+	u_int8_t	tseg2;
+	u_int8_t	sam;
+};
+
+struct can_baudrate_c_can {
+	u_int8_t	brp;
+	u_int8_t	sjw;
+	u_int8_t	tseg1;
+	u_int8_t	tseg2;
+};
+
+struct can_baudrate_nios {
+	u_int8_t	prescale;
+	u_int8_t	timea;
+	u_int8_t	timeb;
+};
 
 struct can_baudrate {
 	enum CAN_BAUD	baudrate;
-	unsigned char	btr[3];
+	union {
+		struct can_baudrate_sja1000 sja1000;
+		struct can_baudrate_c_can c_can;
+		struct can_baudrate_nios nios;
+	} btr;
 };
 
 
