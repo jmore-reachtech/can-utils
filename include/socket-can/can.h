@@ -83,9 +83,10 @@ enum CAN_BAUD {
    CAN_BAUD_1M,
 
    /*!
-   ** Max value, beside CAN_BAUD_BTR
+   ** Max value, beside CAN_BAUD_BTR_*
    */
    CAN_BAUD_MAX,
+   CAN_BAUD_UNCONFIGURED,
 
    CAN_BAUD_BTR_SJA1000 = 0x80,
    CAN_BAUD_BTR_C_CAN,
