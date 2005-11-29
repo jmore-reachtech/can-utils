@@ -17,14 +17,8 @@
 #include <socket-can/can.h>
 
 extern int optind, opterr, optopt;
-static int	running = 1;
 
-void sigterm(int signo)
-{
-	running = 0;
-}
-
-void print_usage(char *prg)
+static void print_usage(char *prg)
 {
         fprintf(stderr, "Usage: %s <can-interface> [Options] <can-msg>\n"
 	                "<can-msg> can consist of up to 8 bytes given as a space separated list\n"
@@ -41,7 +35,7 @@ void print_usage(char *prg)
 			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
 				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
-}
+}	
 
 enum
 {
@@ -57,9 +51,6 @@ int main(int argc, char **argv)
 	int verbose = 0;
 	int loopcount = 1, infinite = 0;
 	struct ifreq ifr;
-
-	signal(SIGTERM, sigterm);
-	signal(SIGHUP, sigterm);
 
 	struct option		long_options[] = {
 		{ "help", no_argument, 0, 'h' },

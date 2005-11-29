@@ -23,10 +23,10 @@ static int	running = 1;
 enum
 {
 	VERSION_OPTION = CHAR_MAX + 1,
-	FILTER_OPTION = CHAR_MAX + 2,
+	FILTER_OPTION,
 };
 
-void print_usage(char *prg)
+static void print_usage(char *prg)
 {
         fprintf(stderr, "Usage: %s <can-interface> [Options]\n"
                         "Options:\n"
@@ -40,7 +40,7 @@ void print_usage(char *prg)
 				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
 }
 
-void sigterm(int signo)
+static void sigterm(int signo)
 {
 	running = 0;
 }
