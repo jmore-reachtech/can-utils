@@ -1,0 +1,15 @@
+bin_PROGRAMS = \
+	candump \
+	canecho \
+	cansend \
+	cansequence
+
+sbin_PROGRAMS = \
+	canconfig
+
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/include
+	-I$(top_builddir)/include
+
+MAINTAINERCLEANFILES = \
+	GNUmakefile.in

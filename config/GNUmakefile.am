@@ -4,4 +4,4 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = canutils.pc
 
 MAINTAINERCLEANFILES = \
-	Makefile.in
+	GNUmakefile.in
