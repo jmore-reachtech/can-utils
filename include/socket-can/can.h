@@ -22,7 +22,7 @@
 #ifndef _SOCKET_CAN_CAN_H
 #define _SOCKET_CAN_CAN_H
 
-//#include <stdint.h>
+#include <stdint.h>
 
 #define CAN_ID_EXT_MASK   0x1FFFFFFF	/* contains CAN id */
 #define CAN_ID_STD_MASK   0x000007FF
@@ -166,24 +166,24 @@ enum CAN_STATE {
 };
 
 struct can_baudrate_sja1000 {
-	u_int8_t	brp;
-	u_int8_t	sjw;
-	u_int8_t	tseg1;
-	u_int8_t	tseg2;
-	u_int8_t	sam;
+	uint8_t	brp;
+	uint8_t	sjw;
+	uint8_t	tseg1;
+	uint8_t	tseg2;
+	uint8_t	sam;
 };
 
 struct can_baudrate_c_can {
-	u_int8_t	brp;
-	u_int8_t	sjw;
-	u_int8_t	tseg1;
-	u_int8_t	tseg2;
+	uint8_t	brp;
+	uint8_t	sjw;
+	uint8_t	tseg1;
+	uint8_t	tseg2;
 };
 
 struct can_baudrate_nios {
-	u_int8_t	prescale;
-	u_int8_t	timea;
-	u_int8_t	timeb;
+	uint8_t	prescale;
+	uint8_t	timea;
+	uint8_t	timeb;
 };
 
 struct can_baudrate {
@@ -220,21 +220,21 @@ struct can_frame {
 	int	can_id;
 	int	can_dlc;
 	union {
-                int64_t    data_64;
-                int32_t    data_32[2];
-                int16_t    data_16[4];
-                int8_t     data_8[8];
-		u_int64_t  data_u64;
-		u_int32_t  data_u32[2];
-		u_int16_t  data_u16[4];
-		u_int8_t   data_u8[8];
-		int8_t     data[8]; 		/* shortcut */
+                int64_t		data_64;
+                int32_t		data_32[2];
+                int16_t		data_16[4];
+                int8_t		data_8[8];
+		uint64_t	data_u64;
+		uint32_t	data_u32[2];
+		uint16_t	data_u16[4];
+		uint8_t		data_u8[8];
+		int8_t		data[8]; 		/* shortcut */
 	} payload;
 };
 
 struct can_filter {
-	u_int32_t	can_id;
-	u_int32_t	can_mask;
+	uint32_t	can_id;
+	uint32_t	can_mask;
 };
 #define SO_CAN_SET_FILTER 1
 #define SO_CAN_UNSET_FILTER 2
