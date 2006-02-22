@@ -91,18 +91,18 @@ speed_t can_value_to_baud(unsigned long value)
 
 void help(void)
 {
-    fprintf(stderr, "usage:\n\t"
-	    "canconfig <dev> baudrate { BR | BTR }\n\t\t"
-	    "BR := { 10 | 20 | 50 | 100 | 125 | 250 | 500 | 800 | 1000 }\n\t\t"
-	    "BTR := btr_sja1000 <brp> <sjw> <tseg1> <tseg2> <sam>\n\t\t"
-	    "BTR := btr_c_can <brp> <sjw> <tseg1> <tseg2>\n\t\t"
-	    "BTR := btr_nios <prescale> <timea> <timeb>\n\t"
-	    "canconfig <dev> mode MODE\n\t\t"
-	    "MODE := { start }\n\t"
-	    "canconfig <dev> state\n"
-	    );
+	fprintf(stderr, "usage:\n\t"
+		"canconfig <dev> baudrate { BR | BTR }\n\t\t"
+		"BR := { 10 | 20 | 50 | 100 | 125 | 250 | 500 | 800 | 1000 }\n\t\t"
+		"BTR := btr_sja1000 <brp> <sjw> <tseg1> <tseg2> <sam>\n\t\t"
+		"BTR := btr_c_can <brp> <sjw> <tseg1> <tseg2>\n\t\t"
+		"BTR := btr_nios <prescale> <timea> <timeb>\n\t"
+		"canconfig <dev> mode MODE\n\t\t"
+		"MODE := { start }\n\t"
+		"canconfig <dev> state\n"
+		);
 
-    exit(EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 }
 
 
@@ -118,32 +118,32 @@ void do_show_baudrate(int argc, char* argv[])
 	}
 
 	switch (br->baudrate) {
-		case CAN_BAUD_BTR_SJA1000:
-			fprintf(stdout, "%s: sja1000 brp=%d sjw=%d tseg1=%d tseg2=%d sam=%d\n",
-				ifr.ifr_name,
-				br->btr.sja1000.brp,
-				br->btr.sja1000.sjw,
-				br->btr.sja1000.tseg1,
-				br->btr.sja1000.tseg2,
-				br->btr.sja1000.sam);
-			break;
-		case CAN_BAUD_BTR_C_CAN:
-			fprintf(stdout, "%s: C-Can brp=%d sjw=%d tseg1=%d tseg2=%d\n",
-				ifr.ifr_name,
-				br->btr.c_can.brp,
-				br->btr.c_can.sjw,
-				br->btr.c_can.tseg1,
-				br->btr.c_can.tseg2);
-			break;
-		case CAN_BAUD_BTR_NIOS:
-			fprintf(stdout, "%s: nios prescale=%d timea=%d timeb=%d\n",
-				ifr.ifr_name,
-				br->btr.nios.prescale,
-				br->btr.nios.timea,
-				br->btr.nios.timeb);
-			break;
-		default:
-			value = can_baud_to_value(br->baudrate);
+	case CAN_BAUD_BTR_SJA1000:
+		fprintf(stdout, "%s: sja1000 brp=%d sjw=%d tseg1=%d tseg2=%d sam=%d\n",
+			ifr.ifr_name,
+			br->btr.sja1000.brp,
+			br->btr.sja1000.sjw,
+			br->btr.sja1000.tseg1,
+			br->btr.sja1000.tseg2,
+			br->btr.sja1000.sam);
+		break;
+	case CAN_BAUD_BTR_C_CAN:
+		fprintf(stdout, "%s: C-Can brp=%d sjw=%d tseg1=%d tseg2=%d\n",
+			ifr.ifr_name,
+			br->btr.c_can.brp,
+			br->btr.c_can.sjw,
+			br->btr.c_can.tseg1,
+			br->btr.c_can.tseg2);
+		break;
+	case CAN_BAUD_BTR_NIOS:
+		fprintf(stdout, "%s: nios prescale=%d timea=%d timeb=%d\n",
+			ifr.ifr_name,
+			br->btr.nios.prescale,
+			br->btr.nios.timea,
+			br->btr.nios.timeb);
+		break;
+	default:
+		value = can_baud_to_value(br->baudrate);
 		if (value != 0)
 			fprintf(stdout,
 				"%s: baudrate %d\n", ifr.ifr_name, value);

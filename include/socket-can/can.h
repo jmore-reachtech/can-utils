@@ -1,7 +1,7 @@
 /*
  * can.h (userspace)
  *
- * Copyright (C) 2004, 2005
+ * Copyright (C) 2004, 2005, 2006
  *
  * - Robert Schwebel, Benedikt Spranger, Marc Kleine-Budde, Pengutronix
  *
@@ -202,7 +202,7 @@ union can_settings {
 };
 
 
-#define AF_CAN		30	/* CAN Bus                      */
+#define AF_CAN		29	/* CAN Bus                      */
 #define PF_CAN		AF_CAN
 
 enum CAN_PROTO {
@@ -236,6 +236,7 @@ struct can_filter {
 	uint32_t	can_id;
 	uint32_t	can_mask;
 };
+
 #define SO_CAN_SET_FILTER 1
 #define SO_CAN_UNSET_FILTER 2
 
