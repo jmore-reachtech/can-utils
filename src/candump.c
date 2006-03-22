@@ -83,8 +83,6 @@ int main(int argc, char **argv)
 	int n = 0, err;
 
 	signal(SIGPIPE, SIG_IGN);
-	signal(SIGTERM, sigterm);
-	signal(SIGHUP, sigterm);
 
 	struct option		long_options[] = {
 		{ "help", no_argument, 0, 'h' },
@@ -181,6 +179,13 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (optdaemon)
+		daemon(1, 0);
+	else {
+		signal(SIGTERM, sigterm);
+		signal(SIGHUP, sigterm);
+	}
+
 	if (optout) {
 		out = fopen(optout, "a");
 		if (!out) {
@@ -188,9 +193,6 @@ int main(int argc, char **argv)
 			exit (EXIT_FAILURE);
 		}
 	}
-
-	if (optdaemon)
-		daemon(1, 0);
 
 	while (running) {
 		if ((nbytes = read(s, &frame, sizeof(struct can_frame))) < 0) {
