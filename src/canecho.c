@@ -17,7 +17,6 @@
 
 extern int optind, opterr, optopt;
 
-static int	s = -1;
 static int	running = 1;
 
 enum
@@ -27,7 +26,11 @@ enum
 
 void print_usage(char *prg)
 {
-        fprintf(stderr, "Usage: %s <can-interface> [Options]\n"
+        fprintf(stderr, "Usage: %s <can-interface> [<can-interface-out>] [Options]\n"
+			"\n"
+			"Send all messages received on <can-interface> to  <can-interface-out>\n"
+			"If <can-interface-out> is omitted, then <can_interface> is used for sending\n"
+			"\n"
                         "Options:\n"
 	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
@@ -40,7 +43,6 @@ void print_usage(char *prg)
 
 void sigterm(int signo)
 {
-	printf("got signal %d\n", signo);
 	running = 0;
 }
 
@@ -48,14 +50,19 @@ int main(int argc, char **argv)
 {
 	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
 	int opt;
-	struct sockaddr_can addr;
+
+	int s[2];
+	struct sockaddr_can addr[2];
+	struct ifreq ifr[2];
+	char *intf_name[2];
+
 	struct can_frame frame;
-	int nbytes, i;
+	int nbytes, i, out;
 	int verbose = 0;
-	struct ifreq ifr;
 
 	signal(SIGTERM, sigterm);
 	signal(SIGHUP, sigterm);
+	signal(SIGINT, sigterm);
 
 	struct option		long_options[] = {
 		{ "help", no_argument, 0, 'h' },
@@ -103,27 +110,41 @@ int main(int argc, char **argv)
 		print_usage(basename(argv[0]));
 		exit(0);
 	}
-	
-	printf("interface = %s, family = %d, type = %d, proto = %d\n",
-			argv[optind], family, type, proto);
-	if ((s = socket(family, type, proto)) < 0) {
-		perror("socket");
-		return 1;
-	}
 
-	addr.can_family = family;
-	strcpy(ifr.ifr_name, argv[optind]);
-	ioctl(s, SIOCGIFINDEX, &ifr);
-	addr.can_ifindex = ifr.ifr_ifindex;
-	addr.can_id = CAN_FLAG_ALL;
+	intf_name[0] = argv[optind++];
+	if (optind == argc)
+		intf_name[1] = intf_name[0];
+	else
+		intf_name[1] = argv[optind];
 
-	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
-		return 1;
+	printf("interface-in = %s, interface-out = %s, family = %d, type = %d, proto = %d\n",
+			intf_name[0], intf_name[1], family, type, proto);
+
+	if (intf_name[0] == intf_name[1])
+		out = 0;
+	else
+		out = 1;
+
+	for (i = 0; i <= out; i++) {
+		if ((s[i] = socket(family, type, proto)) < 0) {
+			perror("socket");
+			return 1;
+		}
+
+		addr[i].can_family = family;
+		strcpy(ifr[i].ifr_name, intf_name[i]);
+		ioctl(s[i], SIOCGIFINDEX, &ifr[i]);
+		addr[i].can_ifindex = ifr[i].ifr_ifindex;
+		addr[i].can_id = CAN_FLAG_ALL;
+
+		if (bind(s[i], (struct sockaddr *)&addr[i], sizeof(addr)) < 0) {
+			perror("bind");
+			return 1;
+		}
 	}
 
 	while (running) {
-		if ((nbytes = read(s, &frame, sizeof(frame))) < 0) {
+		if ((nbytes = read(s[0], &frame, sizeof(frame))) < 0) {
 			perror("read");
 			return 1;
 		}
@@ -140,7 +161,7 @@ int main(int argc, char **argv)
 			printf("\n");
 		}
 		frame.can_id++;
-		write(s, &frame, sizeof(frame));
+		write(s[out], &frame, sizeof(frame));
 	}
 
 	return 0;
