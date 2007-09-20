@@ -1,3 +1,5 @@
+#include <can_config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,9 +14,9 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-#include <can_config.h>
-
-#include <socket-can/can.h>
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <linux/can/ioctl.h>
 
 extern int optind, opterr, optopt;
 
@@ -28,13 +30,13 @@ static void print_usage(char *prg)
 			" -e  --extended        send extended frame\n"
 	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
-                        " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
+                        " -p, --protocol=PROTO  CAN protocol (default CAN_RAW = %d)\n"
 			" -l                    send message infinite times\n"
 			"     --loop=COUNT      send message COUNT times\n"
                         " -v, --verbose         be verbose\n"
 			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
-				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
+				prg, PF_CAN, SOCK_RAW, CAN_RAW);
 }	
 
 enum
@@ -44,7 +46,7 @@ enum
 
 int main(int argc, char **argv)
 {
-	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
+	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 	struct sockaddr_can addr;
 	int s, opt, ret, i, dlc = 0, rtr = 0, extended = 0;
 	struct can_frame frame;
@@ -143,7 +145,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	addr.can_ifindex = ifr.ifr_ifindex;
-	addr.can_id = frame.can_id;
 
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("bind");
@@ -151,25 +152,25 @@ int main(int argc, char **argv)
 	}
 
 
-	for(i = optind + 1; i < argc; i++) {
-		frame.payload.data[dlc] = strtoul(argv[i], NULL, 0);
+	for (i = optind + 1; i < argc; i++) {
+		frame.data[dlc] = strtoul(argv[i], NULL, 0);
 		dlc++;
-		if( dlc == 8 )
+		if (dlc == 8)
 			break;
 	}
 	frame.can_dlc = dlc;
 
-	if(rtr)
-		frame.can_id |= CAN_FLAG_RTR;
+	if (rtr)
+		frame.can_id |= CAN_RTR_FLAG;
 
-	if(extended)
-		frame.can_id |= CAN_FLAG_EXTENDED;
+	if (extended)
+		frame.can_id |= CAN_EFF_FLAG;
 
-	if(verbose) {
+	if (verbose) {
 		printf("id: %d ",frame.can_id);
 		printf("dlc: %d\n",frame.can_dlc);
 		for(i = 0; i < frame.can_dlc; i++)
-			printf("0x%02x ",frame.payload.data[i]);
+			printf("0x%02x ",frame.data[i]);
 		printf("\n");
 	}
 

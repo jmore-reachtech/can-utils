@@ -1,3 +1,5 @@
+#include <can_config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,8 +14,8 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-#include <socket-can/can.h>
-#include <can_config.h>
+#include <linux/can.h>
+#include <linux/can/raw.h>
 
 extern int optind, opterr, optopt;
 
@@ -34,11 +36,11 @@ void print_usage(char *prg)
                         "Options:\n"
 	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
-                        " -p, --protocol=PROTO  CAN protocol (default CAN_PROTO_RAW = %d)\n"
+                        " -p, --protocol=PROTO  CAN protocol (default CAN_RAW = %d)\n"
                         " -v, --verbose         be verbose\n"
 			" -h, --help            this help\n"
 			"     --version         print version information and exit\n",
-				prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
+				prg, PF_CAN, SOCK_RAW, CAN_RAW);
 }
 
 void sigterm(int signo)
@@ -48,7 +50,7 @@ void sigterm(int signo)
 
 int main(int argc, char **argv)
 {
-	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
+	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 	int opt;
 
 	int s[2];
@@ -135,7 +137,6 @@ int main(int argc, char **argv)
 		strcpy(ifr[i].ifr_name, intf_name[i]);
 		ioctl(s[i], SIOCGIFINDEX, &ifr[i]);
 		addr[i].can_ifindex = ifr[i].ifr_ifindex;
-		addr[i].can_id = CAN_FLAG_ALL;
 
 		if (bind(s[i], (struct sockaddr *)&addr[i], sizeof(addr)) < 0) {
 			perror("bind");
@@ -150,12 +151,12 @@ int main(int argc, char **argv)
 		}
 		if (verbose) {
 			printf("%04x: ", frame.can_id);
-			if (frame.can_id & CAN_FLAG_RTR) {
+			if (frame.can_id & CAN_RTR_FLAG) {
 				printf("remote request");
 			} else {
 				printf("[%d]", frame.can_dlc);
 				for (i = 0; i < frame.can_dlc; i++) {
-					printf(" %02x", frame.payload.data[i]);
+					printf(" %02x", frame.data[i]);
 				}
 			}
 			printf("\n");

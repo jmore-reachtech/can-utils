@@ -1,8 +1,8 @@
-# bin_PROGRAMS = \
-# 	candump \
-# 	canecho \
-# 	cansend \
-# 	cansequence
+bin_PROGRAMS = \
+	candump \
+	cansend \
+	canecho \
+	cansequence
 
 sbin_PROGRAMS = \
 	canconfig

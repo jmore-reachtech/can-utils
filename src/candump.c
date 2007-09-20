@@ -1,3 +1,5 @@
+#include <can_config.h>
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,8 +15,9 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-#include <socket-can/can.h>
-#include <can_config.h>
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <linux/can/ioctl.h>
 
 extern int optind, opterr, optopt;
 
@@ -33,14 +36,14 @@ static void print_usage(char *prg)
                         "Options:\n"
 	                " -f, --family=FAMILY\t"	"protocol family (default PF_CAN = %d)\n"
                         " -t, --type=TYPE\t"		"socket type, see man 2 socket (default SOCK_RAW = %d)\n"
-                        " -p, --protocol=PROTO\t"	"CAN protocol (default CAN_PROTO_RAW = %d)\n"
+                        " -p, --protocol=PROTO\t"	"CAN protocol (default CAN_RAW = %d)\n"
 			"     --filter=id:mask[:id:mask]...\n"
 			"\t\t\t"			"apply filter\n"
 			" -h, --help\t\t"		"this help\n"
 			" -o <filename>\t\t"		"output into filename\n"
 			" -d\t\t\t"			"daemonize\n"
 			"     --version\t\t"		"print version information and exit\n",
-		prg, PF_CAN, SOCK_RAW, CAN_PROTO_RAW);
+		prg, PF_CAN, SOCK_RAW, CAN_RAW);
 }
 
 static void sigterm(int signo)
@@ -69,7 +72,7 @@ int add_filter(u_int32_t id, u_int32_t mask)
 
 int main(int argc, char **argv)
 {
-	int family = PF_CAN, type = SOCK_RAW, proto = CAN_PROTO_RAW;
+	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 	int opt, optdaemon = 0;
 	struct sockaddr_can addr;
 	struct can_frame frame;
@@ -165,7 +168,6 @@ int main(int argc, char **argv)
 	strncpy(ifr.ifr_name, argv[optind], sizeof(ifr.ifr_name));
 	ioctl(s, SIOCGIFINDEX, &ifr);
 	addr.can_ifindex = ifr.ifr_ifindex;
-	addr.can_id = CAN_FLAG_ALL;
 
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("bind");
@@ -173,7 +175,7 @@ int main(int argc, char **argv)
 	}
 
 	if(filter) {
-		if(setsockopt(s, SOL_CAN_RAW, SO_CAN_SET_FILTER, filter, filter_count * sizeof(struct can_filter)) != 0) {
+		if(setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, filter, filter_count * sizeof(struct can_filter)) != 0) {
 			perror("setsockopt");
 			exit(1);
 		}
@@ -199,16 +201,16 @@ int main(int argc, char **argv)
 			perror("read");
 			return 1;
 		} else {
-			if (frame.can_id & CAN_FLAG_EXTENDED)
-				n = snprintf(buf, BUF_SIZ, "<0x%08x> ", frame.can_id & CAN_ID_EXT_MASK);
+			if (frame.can_id & CAN_EFF_FLAG)
+				n = snprintf(buf, BUF_SIZ, "<0x%08x> ", frame.can_id & CAN_EFF_MASK);
 			else
-				n = snprintf(buf, BUF_SIZ, "<0x%03x> ", frame.can_id & CAN_ID_STD_MASK);
+				n = snprintf(buf, BUF_SIZ, "<0x%03x> ", frame.can_id & CAN_SFF_MASK);
 
 			n += snprintf(buf + n, BUF_SIZ - n, "[%d] ", frame.can_dlc);
 			for (i = 0; i < frame.can_dlc; i++) {
-				n += snprintf(buf + n, BUF_SIZ - n, "%02x ", frame.payload.data_u8[i]);
+				n += snprintf(buf + n, BUF_SIZ - n, "%02x ", frame.data[i]);
 			}
-			if (frame.can_id & CAN_FLAG_RTR)
+			if (frame.can_id & CAN_RTR_FLAG)
 				n += snprintf(buf + n, BUF_SIZ - n, "remote request");
 
 			fprintf(out, "%s\n", buf);
