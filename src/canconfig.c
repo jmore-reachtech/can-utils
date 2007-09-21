@@ -47,11 +47,8 @@ struct ifreq	ifr;
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
-		"canconfig <dev> baudrate { BR | BTR }\n\t\t"
-		"BR := { 10 | 20 | 50 | 100 | 125 | 250 | 500 | 800 | 1000 }\n\t\t"
-		"BTR := btr_sja1000 <brp> <sjw> <tseg1> <tseg2> <sam>\n\t\t"
-		"BTR := btr_c_can <brp> <sjw> <tseg1> <tseg2>\n\t\t"
-		"BTR := btr_nios <prescale> <timea> <timeb>\n\t"
+		"canconfig <dev> baudrate { BR }\n\t\t"
+		"BR := <baudrate>\n\t\t"
 		"canconfig <dev> mode MODE\n\t\t"
 		"MODE := { start }\n\t"
 		"canconfig <dev> state\n"
@@ -73,8 +70,13 @@ static void do_show_baudrate(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	fprintf(stdout,
-		"%s: baudrate %d\n", ifr.ifr_name, *baudrate);
+	if (*baudrate != -1)
+		fprintf(stdout,
+			"%s: baudrate %d\n", ifr.ifr_name, *baudrate / 1000);
+	else 
+		fprintf(stdout,
+			"%s: baudrate unknown\n", ifr.ifr_name);
+
 }
 
 
@@ -83,7 +85,7 @@ static void do_set_baudrate(int argc, char* argv[])
 	uint32_t *baudrate = (uint32_t *)&ifr.ifr_ifru;
 	int i;
 
-	*baudrate = (uint32_t)strtoul(argv[3], NULL, 0);
+	*baudrate = (uint32_t)strtoul(argv[3], NULL, 0) * 1000;
 	if (*baudrate == 0) {
 		fprintf(stderr, "invalid baudrate\n");
 		exit(EXIT_FAILURE);
