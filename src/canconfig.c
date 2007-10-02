@@ -58,8 +58,8 @@ static void help(void)
 		"canconfig <dev> mode MODE\n\t\t"
 		"MODE := { start }\n\t"
 		"canconfig <dev> tweak [ VALs ]\n\t\t"
-		"VALs := <TBR SYS PPS PHS1 PHS2 SJW>\n\t\t"
-		" TBR bit rate to be tweaked in kHz\n\t\t"
+		"VALs := <TBR BRP PPS PHS1 PHS2 SJW>\n\t\t"
+		" TBR bit rate to be tweaked in Hz\n\t\t"
 		" BRP bit rate prescaler\n\t\t"
 		" PPS Prop_Seg in tq\n\t\t"
 		" PHS1 Phase_Seg1 in tq\n\t\t"
@@ -154,7 +154,7 @@ static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 
 	if (sizeof(struct can_bit_time_custom) > sizeof(ifr.ifr_ifru)) {
 		printf("Error can_bit_time_custom to large! (%d, %d)",
-			sizeof (struct can_bit_time_custom), sizeof(ifr.ifr_ifru));
+			sizeof(struct can_bit_time_custom), sizeof(ifr.ifr_ifru));
 		exit(EXIT_FAILURE);
 	}
 
