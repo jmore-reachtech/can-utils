@@ -45,7 +45,7 @@
 #define kHz 1000
 
 #define CONFIG_FILE_NAME "/etc/canconfig.conf"
-/* #define CONFIG_FILE_NAME "./canconfig.conf" */
+#define CONFIG_FILE_NAME_SP "/etc/canconfig-%s.conf"
 
 int             s;
 struct ifreq	ifr;
@@ -177,6 +177,7 @@ static void tweak_from_command_line(int argc, char *argv[])
 static void tweak_from_config_file(int argc, char *argv[])
 {
 	FILE *config_file;
+	char file_name[MAX_PATH];
 	int first_char,cnt,line = 1;
 	uint32_t bit_rate;
 	uint32_t sync_seg;
@@ -185,11 +186,15 @@ static void tweak_from_config_file(int argc, char *argv[])
 	uint32_t phase_seg2;
 	uint32_t sjw;
 
-	config_file = fopen(CONFIG_FILE_NAME, "r");
+	sprintf(file_name, CONFIG_FILE_NAME_SP, argv[1]);
+	config_file = fopen(file_name, "r");
 	if (config_file == NULL) {
-		perror("Config file (" CONFIG_FILE_NAME ")");
-		exit(EXIT_FAILURE);
-	}
+		sprintf(file_name, CONFIG_FILE_NAME,);
+		config_file = fopen(file_name, "r");
+		if (config_file == NULL) {
+			perror("Config file (" CONFIG_FILE_NAME ")");
+			exit(EXIT_FAILURE);
+		}
 
 	while(!feof(config_file)) {
 		first_char = fgetc(config_file);
@@ -212,7 +217,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 			&sjw);
 		if (cnt != 6) {
 			fprintf(stderr,"Wrong data format in line %d in %s\n",
-				line, CONFIG_FILE_NAME);
+				line, file_name);
 			exit(EXIT_FAILURE);
 		}
 		line ++;
