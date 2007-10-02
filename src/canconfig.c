@@ -149,15 +149,21 @@ static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 		uint32_t prop_seg, uint32_t phase_seg1, uint32_t phase_seg2,
 		uint32_t sjw)
 {
-	struct can_bit_time_custom *bit_time = (can_bit_time_custom *)&ifr.ifr_ifru;
+	struct can_bit_time_custom *bit_time = (struct can_bit_time_custom *)&ifr.ifr_ifru;
 	int i;
+
+	if (sizeof(struct can_bit_time_custom) > sizeof(ifr.ifr_ifru)) {
+		printf("Error can_bit_time_custom to large! (%d, %d)",
+			sizeof (struct can_bit_time_custom), sizeof(ifr.ifr_ifru));
+		exit(EXIT_FAILURE);
+	}
 
 	bit_time->bit_rate = bit_rate;
 	bit_time->brp = brp;
 	bit_time->prop_seg = prop_seg;
 	bit_time->phase_seg1 = phase_seg1;
 	bit_time->phase_seg2 = phase_seg2;
-	bit_time->sjw = sjw
+	bit_time->sjw = sjw;
 
 	i = ioctl(s, SIOCSCANDEDBITTIME, &ifr);
 	if (i < 0) {
@@ -193,7 +199,7 @@ static void tweak_from_command_line(int argc, char *argv[])
 static void tweak_from_config_file(int argc, char *argv[])
 {
 	FILE *config_file;
-	char file_name[MAX_PATH];
+	char file_name[PATH_MAX];
 	int first_char,cnt,line = 1;
 	uint32_t bit_rate;
 	uint32_t brp;
@@ -205,12 +211,13 @@ static void tweak_from_config_file(int argc, char *argv[])
 	sprintf(file_name, CONFIG_FILE_NAME_SP, argv[1]);
 	config_file = fopen(file_name, "r");
 	if (config_file == NULL) {
-		sprintf(file_name, CONFIG_FILE_NAME,);
+		sprintf(file_name, CONFIG_FILE_NAME);
 		config_file = fopen(file_name, "r");
 		if (config_file == NULL) {
 			perror("Config file (" CONFIG_FILE_NAME ")");
 			exit(EXIT_FAILURE);
 		}
+	}
 
 	while(!feof(config_file)) {
 		first_char = fgetc(config_file);
@@ -313,7 +320,7 @@ int main(int argc, char *argv[])
 {
 	if ((argc < 2) || !strcmp(argv[1], "--help"))
 		help();
-#if 0
+#if 1
 	if ((s = socket(AF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
