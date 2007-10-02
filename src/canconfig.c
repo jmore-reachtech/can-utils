@@ -60,7 +60,7 @@ static void help(void)
 		"canconfig <dev> tweak [ VALs ]\n\t\t"
 		"VALs := <TBR SYS PPS PHS1 PHS2 SJW>\n\t\t"
 		" TBR bit rate to be tweaked in kHz\n\t\t"
-		" SYS Sync_Seg in tq\n\t\t"
+		" BRP bit rate prescaler\n\t\t"
 		" PPS Prop_Seg in tq\n\t\t"
 		" PHS1 Phase_Seg1 in tq\n\t\t"
 		" PHS2 Phase_Seg2 in tq\n\t\t"
@@ -145,16 +145,31 @@ static void cmd_mode(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-static void tweak_a_bitrate(uint32_t bit_rate, uint32_t sync_seg,
+static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 		uint32_t prop_seg, uint32_t phase_seg1, uint32_t phase_seg2,
 		uint32_t sjw)
 {
+	struct can_bit_time_custom *bit_time = (can_bit_time_custom *)&ifr.ifr_ifru;
+	int i;
+
+	bit_time->bit_rate = bit_rate;
+	bit_time->brp = brp;
+	bit_time->prop_seg = prop_seg;
+	bit_time->phase_seg1 = phase_seg1;
+	bit_time->phase_seg2 = phase_seg2;
+	bit_time->sjw = sjw
+
+	i = ioctl(s, SIOCSCANDEDBITTIME, &ifr);
+	if (i < 0) {
+		perror("ioctl");
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void tweak_from_command_line(int argc, char *argv[])
 {
 	uint32_t bit_rate;
-	uint32_t sync_seg;
+	uint32_t brp;
 	uint32_t prop_seg;
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
@@ -164,14 +179,15 @@ static void tweak_from_command_line(int argc, char *argv[])
 		help();
 
 	bit_rate = (uint32_t)strtoul(argv[3], NULL, 0);
-	sync_seg = (uint32_t)strtoul(argv[4], NULL, 0);
+	brp = (uint32_t)strtoul(argv[4], NULL, 0);
 	prop_seg = (uint32_t)strtoul(argv[5], NULL, 0);
 	phase_seg1 = (uint32_t)strtoul(argv[6], NULL, 0);
 	phase_seg2 = (uint32_t)strtoul(argv[7], NULL, 0);
 	sjw = (uint32_t)strtoul(argv[8], NULL, 0);
 
-	tweak_a_bitrate(bit_rate, sync_seg, prop_seg, phase_seg1, phase_seg2,
-			sjw);
+	tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1, phase_seg2, sjw);
+
+	exit(EXIT_SUCCESS);
 }
 
 static void tweak_from_config_file(int argc, char *argv[])
@@ -180,7 +196,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 	char file_name[MAX_PATH];
 	int first_char,cnt,line = 1;
 	uint32_t bit_rate;
-	uint32_t sync_seg;
+	uint32_t brp;
 	uint32_t prop_seg;
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
@@ -213,7 +229,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 			ungetc(first_char, config_file);
 
 		cnt = fscanf(config_file,"%u %u %u %u %u %u\n", &bit_rate,
-			&sync_seg, &prop_seg, &phase_seg1, &phase_seg2,
+			&brp, &prop_seg, &phase_seg1, &phase_seg2,
 			&sjw);
 		if (cnt != 6) {
 			fprintf(stderr,"Wrong data format in line %d in %s\n",
@@ -221,7 +237,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		line ++;
-		tweak_a_bitrate(bit_rate, sync_seg, prop_seg, phase_seg1,
+		tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1,
 				phase_seg2, sjw);
 	}
 
