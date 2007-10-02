@@ -1,3 +1,7 @@
+2007-10-02 Juergen Beisert
+
+	* canconfig: adding support for manually calculated bit rate configurations
+
 2005-03-16 Robert Schwebel 
 
 	* framework: collected all tools and autotoolized
