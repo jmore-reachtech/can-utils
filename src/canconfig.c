@@ -147,7 +147,7 @@ static void cmd_mode(int argc, char *argv[])
 
 static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 		uint32_t prop_seg, uint32_t phase_seg1, uint32_t phase_seg2,
-		uint32_t sjw)
+		uint32_t sjw, int sam)
 {
 	struct can_bit_time_custom *bit_time = (struct can_bit_time_custom *)&ifr.ifr_ifru;
 	int i;
@@ -164,6 +164,7 @@ static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 	bit_time->phase_seg1 = phase_seg1;
 	bit_time->phase_seg2 = phase_seg2;
 	bit_time->sjw = sjw;
+	bit_time->sam = sam;
 
 	i = ioctl(s, SIOCSCANDEDBITTIME, &ifr);
 	if (i < 0) {
@@ -180,6 +181,7 @@ static void tweak_from_command_line(int argc, char *argv[])
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
 	uint32_t sjw;
+	int sam;
 
 	if (argc < 9)
 		help();
@@ -190,8 +192,9 @@ static void tweak_from_command_line(int argc, char *argv[])
 	phase_seg1 = (uint32_t)strtoul(argv[6], NULL, 0);
 	phase_seg2 = (uint32_t)strtoul(argv[7], NULL, 0);
 	sjw = (uint32_t)strtoul(argv[8], NULL, 0);
+	sam = (int)strtoul(argv[8], NULL, 0);
 
-	tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1, phase_seg2, sjw);
+	tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1, phase_seg2, sjw, sam);
 
 	exit(EXIT_SUCCESS);
 }
@@ -207,6 +210,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
 	uint32_t sjw;
+	int sam;
 
 	sprintf(file_name, CONFIG_FILE_NAME_SP, argv[1]);
 	config_file = fopen(file_name, "r");
@@ -235,9 +239,9 @@ static void tweak_from_config_file(int argc, char *argv[])
 		else
 			ungetc(first_char, config_file);
 
-		cnt = fscanf(config_file,"%u %u %u %u %u %u\n", &bit_rate,
+		cnt = fscanf(config_file,"%u %u %u %u %u %ui %d\n", &bit_rate,
 			&brp, &prop_seg, &phase_seg1, &phase_seg2,
-			&sjw);
+			&sjw, &sam);
 		if (cnt != 6) {
 			fprintf(stderr,"Wrong data format in line %d in %s\n",
 				line, file_name);
@@ -245,7 +249,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 		}
 		line ++;
 		tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1,
-				phase_seg2, sjw);
+				phase_seg2, sjw, sam);
 	}
 
 	fclose(config_file);
