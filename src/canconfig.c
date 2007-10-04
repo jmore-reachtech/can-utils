@@ -58,13 +58,15 @@ static void help(void)
 		"canconfig <dev> mode MODE\n\t\t"
 		"MODE := { start }\n\t"
 		"canconfig <dev> tweak [ VALs ]\n\t\t"
-		"VALs := <TBR BRP PPS PHS1 PHS2 SJW>\n\t\t"
+		"VALs := <TBR TQ ERR PPS PHS1 PHS2 SJW SAM>\n\t\t"
 		" TBR bit rate to be tweaked in Hz\n\t\t"
-		" BRP bit rate prescaler\n\t\t"
+		" TQ time quantum in ps\n\t\t"
+		" ERR max. allowed error in pps\n\t\t"
 		" PPS Prop_Seg in tq\n\t\t"
 		" PHS1 Phase_Seg1 in tq\n\t\t"
 		" PHS2 Phase_Seg2 in tq\n\t\t"
 		" SJW in tq\n\t\t"
+		" SAM 1 for 3 times sampling, 0 else\n\t\t"
 		" without VALSs " CONFIG_FILE_NAME " will be read\n"
 		);
 
@@ -145,7 +147,7 @@ static void cmd_mode(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
+static void tweak_a_bitrate(uint32_t bit_rate, uint32_t tq, uint32_t err,
 		uint32_t prop_seg, uint32_t phase_seg1, uint32_t phase_seg2,
 		uint32_t sjw, int sam)
 {
@@ -159,7 +161,8 @@ static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 	}
 
 	bit_time->bit_rate = bit_rate;
-	bit_time->brp = brp;
+	bit_time->tq = tq;
+	bit_time->bit_error = err;
 	bit_time->prop_seg = prop_seg;
 	bit_time->phase_seg1 = phase_seg1;
 	bit_time->phase_seg2 = phase_seg2;
@@ -176,7 +179,8 @@ static void tweak_a_bitrate(uint32_t bit_rate, uint32_t brp,
 static void tweak_from_command_line(int argc, char *argv[])
 {
 	uint32_t bit_rate;
-	uint32_t brp;
+	uint32_t tq;
+	uint32_t err;
 	uint32_t prop_seg;
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
@@ -187,14 +191,15 @@ static void tweak_from_command_line(int argc, char *argv[])
 		help();
 
 	bit_rate = (uint32_t)strtoul(argv[3], NULL, 0);
-	brp = (uint32_t)strtoul(argv[4], NULL, 0);
-	prop_seg = (uint32_t)strtoul(argv[5], NULL, 0);
-	phase_seg1 = (uint32_t)strtoul(argv[6], NULL, 0);
-	phase_seg2 = (uint32_t)strtoul(argv[7], NULL, 0);
-	sjw = (uint32_t)strtoul(argv[8], NULL, 0);
-	sam = (int)strtoul(argv[8], NULL, 0);
+	tq = (uint32_t)strtoul(argv[4], NULL, 0);
+	err = (uint32_t)strtoul(argv[5], NULL, 0);
+	prop_seg = (uint32_t)strtoul(argv[6], NULL, 0);
+	phase_seg1 = (uint32_t)strtoul(argv[7], NULL, 0);
+	phase_seg2 = (uint32_t)strtoul(argv[8], NULL, 0);
+	sjw = (uint32_t)strtoul(argv[9], NULL, 0);
+	sam = (int)strtoul(argv[10], NULL, 0);
 
-	tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1, phase_seg2, sjw, sam);
+	tweak_a_bitrate(bit_rate, tq, err, prop_seg, phase_seg1, phase_seg2, sjw, sam);
 
 	exit(EXIT_SUCCESS);
 }
@@ -205,7 +210,8 @@ static void tweak_from_config_file(int argc, char *argv[])
 	char file_name[PATH_MAX];
 	int first_char,cnt,line = 1;
 	uint32_t bit_rate;
-	uint32_t brp;
+	uint32_t tq;
+	uint32_t err;
 	uint32_t prop_seg;
 	uint32_t phase_seg1;
 	uint32_t phase_seg2;
@@ -239,8 +245,8 @@ static void tweak_from_config_file(int argc, char *argv[])
 		else
 			ungetc(first_char, config_file);
 
-		cnt = fscanf(config_file,"%u %u %u %u %u %ui %d\n", &bit_rate,
-			&brp, &prop_seg, &phase_seg1, &phase_seg2,
+		cnt = fscanf(config_file,"%u %u %u %u %u %u %u %d\n", &bit_rate,
+			&tq, &err, &prop_seg, &phase_seg1, &phase_seg2,
 			&sjw, &sam);
 		if (cnt != 6) {
 			fprintf(stderr,"Wrong data format in line %d in %s\n",
@@ -248,7 +254,7 @@ static void tweak_from_config_file(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		line ++;
-		tweak_a_bitrate(bit_rate, brp, prop_seg, phase_seg1,
+		tweak_a_bitrate(bit_rate, tq, err, prop_seg, phase_seg1,
 				phase_seg2, sjw, sam);
 	}
 
