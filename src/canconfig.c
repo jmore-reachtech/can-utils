@@ -330,14 +330,14 @@ int main(int argc, char *argv[])
 {
 	if ((argc < 2) || !strcmp(argv[1], "--help"))
 		help();
-#if 1
+
 	if ((s = socket(AF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
 
 	strncpy(ifr.ifr_name, argv[1], IFNAMSIZ);
-#endif
+
 	if (argc < 3)
 		cmd_show_interface(argc, argv);
 
