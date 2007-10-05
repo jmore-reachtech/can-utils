@@ -1,3 +1,9 @@
+2007-10-05 Juergen Beisert
+
+	* release: 2.0.2 with support for custom bitrates.
+	 Note: This feature is currently experimental and not in mainline.
+	 To use it the kernel needs a special patch!
+
 2007-10-02 Juergen Beisert
 
 	* canconfig: adding support for manually calculated bit rate configurations
