@@ -1,3 +1,7 @@
+2007-10-08 Juergen Beisert
+
+	* command line: change command line options to set a custom bitrate
+
 2007-10-05 Juergen Beisert
 
 	* release: 2.0.2 with support for custom bitrates.

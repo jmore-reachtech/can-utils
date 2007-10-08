@@ -57,17 +57,16 @@ static void help(void)
 		"BR := <baudrate>\n\t\t"
 		"canconfig <dev> mode MODE\n\t\t"
 		"MODE := { start }\n\t"
-		"canconfig <dev> tweak [ VALs ]\n\t\t"
-		"VALs := <TBR TQ ERR PPS PHS1 PHS2 SJW SAM>\n\t\t"
-		" TBR bit rate to be tweaked in Hz\n\t\t"
-		" TQ time quantum in ps\n\t\t"
-		" ERR max. allowed error in pps\n\t\t"
-		" PPS Prop_Seg in tq\n\t\t"
-		" PHS1 Phase_Seg1 in tq\n\t\t"
-		" PHS2 Phase_Seg2 in tq\n\t\t"
-		" SJW in tq\n\t\t"
-		" SAM 1 for 3 times sampling, 0 else\n\t\t"
-		" without VALSs " CONFIG_FILE_NAME " will be read\n"
+		"canconfig <dev> setentry [ VALs ]\n\t\t"
+		"VALs := <bitrate | tq | err | prop_seg | phase_seg1 | phase_seg2 | sjw | sam>\n\t\t"
+		" bitrate <nominal bit rate to be set [Hz]>\n\t\t"
+		" tq <time quantum in ns>\n\t\t"
+		" err <max. allowed error in pps>\n\t\t"
+		" prop_seg <no. in tq>\n\t\t"
+		" phase_seg1 <no. in tq>\n\t\t"
+		" phase_seg2 <no. in tq\n\t\t"
+		" sjw <no. in tq>\n\t\t"
+		" sam <1 | 0> 1 for 3 times sampling, 0 else\n"
 		);
 
 	exit(EXIT_FAILURE);
@@ -147,131 +146,124 @@ static void cmd_mode(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-static void tweak_a_bitrate(uint32_t bit_rate, uint32_t tq, uint32_t err,
-		uint32_t prop_seg, uint32_t phase_seg1, uint32_t phase_seg2,
-		uint32_t sjw, int sam)
+/*
+ * setup a custom bitrate for a specific interface
+ * Options are:
+ * canconfig <interface> setentry
+ * [bitrate <number>] | [tq <number>] | [err <number>] [prop_seg <number>] |
+ *     [phase_seg1 <number>] | [phase_seg2 <number>] | [sjw <number>] | [sam <number>]
+ */
+static void cmd_setentry(int argc, char *argv[])
 {
+	int done, i;
 	struct can_bit_time_custom *bit_time = (struct can_bit_time_custom *)&ifr.ifr_ifru;
-	int i;
 
+	/* mark each field as unintialised */
+	bit_time->bit_rate = bit_time->tq = bit_time->bit_error = -1;
+	bit_time->prop_seg = bit_time->phase_seg1 =
+			bit_time->phase_seg2 = -1;
+	bit_time->sjw = -1;
+	bit_time->sam = -1;
+
+	/* runtime testing until everything here is in mainline */
 	if (sizeof(struct can_bit_time_custom) > sizeof(ifr.ifr_ifru)) {
 		printf("Error can_bit_time_custom to large! (%d, %d)",
-			sizeof(struct can_bit_time_custom), sizeof(ifr.ifr_ifru));
+		       sizeof(struct can_bit_time_custom), sizeof(ifr.ifr_ifru));
 		exit(EXIT_FAILURE);
 	}
 
-	bit_time->bit_rate = bit_rate;
-	bit_time->tq = tq;
-	bit_time->bit_error = err;
-	bit_time->prop_seg = prop_seg;
-	bit_time->phase_seg1 = phase_seg1;
-	bit_time->phase_seg2 = phase_seg2;
-	bit_time->sjw = sjw;
-	bit_time->sam = sam;
+	/*
+	 * Note: all values must be given. There is no default
+	 * value for any one of these
+	 */
+	if (argc < 19)
+		help();
+
+	done = 3;
+
+	while ((done + 1) < argc) {
+		if (!strcmp(argv[done], "bitrate")) {
+			bit_time->bit_rate = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "tq")) {
+			bit_time->tq = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "err")) {
+			bit_time->bit_error = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "prop_seg")) {
+			bit_time->prop_seg = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "phase_seg1")) {
+			bit_time->phase_seg1 = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "phase_seg2")) {
+			bit_time->phase_seg2 = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "sjw")) {
+			bit_time->sjw = (uint32_t)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+		if (!strcmp(argv[done], "sam")) {
+			bit_time->sam = (int)strtoul(argv[++done], NULL, 0);
+			done++;
+			continue;
+		}
+	}
+
+	if (bit_time->bit_rate == -1) {
+		fprintf(stderr, "missing bit_rate value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->tq == -1) {
+		fprintf(stderr, "missing tq value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->bit_error == -1) {
+		fprintf(stderr, "missing err value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->prop_seg == (__u8)-1) {
+		fprintf(stderr, "missing prop_seg value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->phase_seg1 == (__u8)-1) {
+		fprintf(stderr, "missing phase_seg1 value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->phase_seg2 == (__u8)-1) {
+		fprintf(stderr, "missing phase_seg2 value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->sjw == -1) {
+		fprintf(stderr, "missing sjw value!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (bit_time->sam == -1) {
+		fprintf(stderr, "missing sam value!\n");
+		exit(EXIT_FAILURE);
+	}
 
 	i = ioctl(s, SIOCSCANDEDBITTIME, &ifr);
 	if (i < 0) {
 		perror("ioctl");
 		exit(EXIT_FAILURE);
 	}
-}
-
-static void tweak_from_command_line(int argc, char *argv[])
-{
-	uint32_t bit_rate;
-	uint32_t tq;
-	uint32_t err;
-	uint32_t prop_seg;
-	uint32_t phase_seg1;
-	uint32_t phase_seg2;
-	uint32_t sjw;
-	int sam;
-
-	if (argc < 9)
-		help();
-
-	bit_rate = (uint32_t)strtoul(argv[3], NULL, 0);
-	tq = (uint32_t)strtoul(argv[4], NULL, 0);
-	err = (uint32_t)strtoul(argv[5], NULL, 0);
-	prop_seg = (uint32_t)strtoul(argv[6], NULL, 0);
-	phase_seg1 = (uint32_t)strtoul(argv[7], NULL, 0);
-	phase_seg2 = (uint32_t)strtoul(argv[8], NULL, 0);
-	sjw = (uint32_t)strtoul(argv[9], NULL, 0);
-	sam = (int)strtoul(argv[10], NULL, 0);
-
-	tweak_a_bitrate(bit_rate, tq, err, prop_seg, phase_seg1, phase_seg2, sjw, sam);
 
 	exit(EXIT_SUCCESS);
-}
-
-static void tweak_from_config_file(int argc, char *argv[])
-{
-	FILE *config_file;
-	char file_name[PATH_MAX];
-	int first_char,cnt,line = 1;
-	uint32_t bit_rate;
-	uint32_t tq;
-	uint32_t err;
-	uint32_t prop_seg;
-	uint32_t phase_seg1;
-	uint32_t phase_seg2;
-	uint32_t sjw;
-	int sam;
-
-	sprintf(file_name, CONFIG_FILE_NAME_SP, argv[1]);
-	config_file = fopen(file_name, "r");
-	if (config_file == NULL) {
-		sprintf(file_name, CONFIG_FILE_NAME);
-		config_file = fopen(file_name, "r");
-		if (config_file == NULL) {
-			perror("Config file (" CONFIG_FILE_NAME ")");
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	while(!feof(config_file)) {
-		first_char = fgetc(config_file);
-		printf("First char in line %d is: %02x (%c)\n", line, first_char, first_char);
-		if (first_char == EOF)
-			break;
-		if (first_char == '#') {
-			printf("eating line %d ", line);
-			cnt=fscanf(config_file,"%*[^\n]");	/* eat the whole line */
-			printf("-> %d\n", cnt);
-			fgetc(config_file); /* FIXME: eat the \n */
-			line ++;
-			continue;
-		}
-		else
-			ungetc(first_char, config_file);
-
-		cnt = fscanf(config_file,"%u %u %u %u %u %u %u %d\n", &bit_rate,
-			&tq, &err, &prop_seg, &phase_seg1, &phase_seg2,
-			&sjw, &sam);
-		if (cnt != 6) {
-			fprintf(stderr,"Wrong data format in line %d in %s\n",
-				line, file_name);
-			exit(EXIT_FAILURE);
-		}
-		line ++;
-		tweak_a_bitrate(bit_rate, tq, err, prop_seg, phase_seg1,
-				phase_seg2, sjw, sam);
-	}
-
-	fclose(config_file);
-
-	exit(EXIT_SUCCESS);
-}
-
-static void cmd_tweak(int argc, char *argv[])
-{
-	if (argc < 4)
-		tweak_from_config_file(argc, argv);
-	else {
-		if (argc < 9)
-			help();
-		tweak_from_command_line(argc, argv);
-	}
 }
 
 #if 0
@@ -345,9 +337,9 @@ int main(int argc, char *argv[])
 		cmd_baudrate(argc, argv);
 	if (!strcmp(argv[2], "mode"))
 		cmd_mode(argc, argv);
-	if (!strcmp(argv[2], "tweak"))
-		cmd_tweak(argc, argv);
-	
+	if (!strcmp(argv[2], "setentry"))
+		cmd_setentry(argc, argv);
+
 /* 	if (!strcmp(argv[2], "state")) */
 /* 		cmd_state(argc, argv); */
 
