@@ -266,11 +266,9 @@ static void cmd_setentry(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-#if 0
 static void do_show_state(int argc, char *argv[])
 {
-	union can_settings *settings = (union can_settings *)&ifr.ifr_ifru;
-	enum CAN_STATE state;
+	can_state_t *state;
 	char *str;
 	int i;
 
@@ -280,14 +278,17 @@ static void do_show_state(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	state = settings->state;
+	state = (can_state_t *)&ifr.ifr_ifru;
 	fprintf(stdout, "%s: state ", ifr.ifr_name);
-	switch (state) {
+	switch (*state) {
 	case CAN_STATE_BUS_PASSIVE:
 		str = "bus passive";
 		break;
 	case CAN_STATE_ACTIVE:
 		str = "active";
+		break;
+	case CAN_STATE_BUS_WARNING:
+		str = "warning";
 		break;
 	case CAN_STATE_BUS_OFF:
 		str = "bus off";
@@ -300,20 +301,17 @@ static void do_show_state(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-
 static void cmd_state(int argc, char *argv[])
 {
 	do_show_state(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
-#endif
-
 
 static void cmd_show_interface(int argc, char *argv[])
 {
 	do_show_baudrate(argc, argv);
-/* 	do_show_state(argc, argv); */
+ 	do_show_state(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
