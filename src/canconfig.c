@@ -1,11 +1,11 @@
 /*
  * canutils/canconfig.c
  *
- * Copyright (C) 2005 Marc Kleine-Budde <mkl@pengutronix.de>, Pengutronix
+ * Copyright (C) 2005, 2008 Marc Kleine-Budde <mkl@pengutronix.de>, Pengutronix
  * Copyright (C) 2007 Juergen Beisert <jbe@pengutronix.de>, Pengutronix
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the version 2 of the GNU General Public License 
+ * it under the terms of the version 2 of the GNU General Public License
  * as published by the Free Software Foundation
  *
  * This program is distributed in the hope that it will be useful,
@@ -23,39 +23,35 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <termios.h>
 #include <string.h>
+#include <unistd.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
-
-#include <net/if.h>
-#include <netinet/in.h>
-#include <netinet/ether.h>
-
-#include <linux/can.h>
-#include <linux/can/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define kHz 1000
+#define VALUE_MAX		256
+#define SYSFS_PATH_MAX		256
+#define SYSFS_MNT_PATH		"/sys"
+#define SYSFS_PATH_ENV		"SYSFS_PATH"
 
-#define CONFIG_FILE_NAME "/etc/canconfig.conf"
-#define CONFIG_FILE_NAME_SP "/etc/canconfig-%s.conf"
+#define CLASS_NET		"/class/net/"
 
-int             s;
-struct ifreq	ifr;
+static char sysfs_path[SYSFS_PATH_MAX];
+static const char *dev;
 
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
-		"canconfig <dev> baudrate { BR }\n\t\t"
-		"BR := <baudrate>\n\t\t"
-		"canconfig <dev> mode MODE\n\t\t"
+		"canconfig <dev> bitrate { BR }\n\t\t"
+		"BR := <bitrate in Hz>\n\t\t"
+		"canconfig <dev> mode\n" 
+#if 0
+		"MODE\n\t\t"
 		"MODE := { start }\n\t"
 		"canconfig <dev> setentry [ VALs ]\n\t\t"
 		"VALs := <bitrate | tq | err | prop_seg | phase_seg1 | phase_seg2 | sjw | sam>\n\t\t"
@@ -67,84 +63,78 @@ static void help(void)
 		" phase_seg2 <no. in tq\n\t\t"
 		" sjw <no. in tq>\n\t\t"
 		" sam <1 | 0> 1 for 3 times sampling, 0 else\n"
+#endif
 		);
 
 	exit(EXIT_FAILURE);
 }
 
-static void do_show_baudrate(int argc, char* argv[])
+
+static void make_path(char *key_path, const char *key, size_t key_path_len)
 {
-	uint32_t *baudrate = (uint32_t *)&ifr.ifr_ifru;
-	int i;
-	
-	i = ioctl(s, SIOCGCANBAUDRATE, &ifr);
-
-	if (i < 0) {
-		perror("ioctl");
-		exit(EXIT_FAILURE);
-	}
-
-	if (*baudrate != -1)
-		fprintf(stdout,
-			"%s: baudrate %d\n", ifr.ifr_name, *baudrate / kHz);
-	else 
-		fprintf(stdout,
-			"%s: baudrate unknown\n", ifr.ifr_name);
-
+	strncpy(key_path, sysfs_path, key_path_len);
+	strncat(key_path, key, key_path_len);
+	key_path[key_path_len - 1] = 0;
 }
 
 
-static void do_set_baudrate(int argc, char* argv[])
+static ssize_t get_value(const char* key, char *value, size_t value_len)
 {
-	uint32_t *baudrate = (uint32_t *)&ifr.ifr_ifru;
-	int i;
+	char key_path[SYSFS_PATH_MAX];
+	int fd;
+	ssize_t len;
 
-	*baudrate = (uint32_t)strtoul(argv[3], NULL, 0) * kHz;
-	if (*baudrate == 0) {
-		fprintf(stderr, "invalid baudrate\n");
+	make_path(key_path, key, sizeof(key_path));
+
+	fd = open(key_path, O_RDONLY);
+	if (fd == -1) {
+		fprintf(stderr, "opening '%s' failed: ",
+			key_path);
+		perror(NULL);
 		exit(EXIT_FAILURE);
 	}
 
-	i = ioctl(s, SIOCSCANBAUDRATE, &ifr);
-	if (i < 0) {
-		perror("ioctl");
+	len = read(fd, value, value_len - 1);
+	close(fd);
+	if (len < 0) {
+		perror("read");
 		exit(EXIT_FAILURE);
 	}
+	value[len] = 0;
+
+	/* remove trailing newline(s) */
+	while (len > 0 && value[len - 1] == '\n')
+		value[--len] = '\0';
+
+	return len;
 }
 
 
-static void cmd_baudrate(int argc, char *argv[])
+static ssize_t set_value(const char* key, const char *value)
 {
-	if (argc >= 4) {
-		do_set_baudrate(argc, argv);
-	}
-	do_show_baudrate(argc, argv);
+	char key_path[SYSFS_PATH_MAX];
+	int fd;
+	ssize_t len;
 
-	exit(EXIT_SUCCESS);
-}
+	make_path(key_path, key, sizeof(key_path));
 
-static void cmd_mode(int argc, char *argv[])
-{
-	can_mode_t *mode = (can_mode_t *)&ifr.ifr_ifru;
-	int i;
-
-	if (argc < 4 )
-		help();
-
-	if (!strcmp(argv[3], "start")) {
-		*mode = CAN_MODE_START;
-	} else {
-		help();
-	}
-
-	i = ioctl(s, SIOCSCANMODE, &ifr);
-	if (i < 0) {
-		perror("ioctl");
+	fd = open(key_path, O_WRONLY);
+	if (fd == -1) {
+		fprintf(stderr, "opening '%s' failed: ",
+			key_path);
+		perror(NULL);
 		exit(EXIT_FAILURE);
 	}
 
-	exit(EXIT_SUCCESS);
+	len = write(fd, value, strlen(value));
+	close(fd);
+
+	return len;
 }
+
+
+
+#if 0
 
 /*
  * setup a custom bitrate for a specific interface
@@ -161,7 +151,7 @@ static void cmd_setentry(int argc, char *argv[])
 	/* mark each field as unintialised */
 	bit_time->bit_rate = bit_time->tq = bit_time->bit_error = -1;
 	bit_time->prop_seg = bit_time->phase_seg1 =
-			bit_time->phase_seg2 = -1;
+		bit_time->phase_seg2 = -1;
 	bit_time->sjw = -1;
 	bit_time->sam = -1;
 
@@ -266,39 +256,56 @@ static void cmd_setentry(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-static void do_show_state(int argc, char *argv[])
-{
-	can_state_t *state;
-	char *str;
-	int i;
+#endif
 
-	i = ioctl(s, SIOCGCANSTATE, &ifr);
-	if (i < 0) {
-		perror("ioctl");
+
+static void do_show_bitrate(int argc, char* argv[])
+{
+	char value[VALUE_MAX];
+	unsigned long bitrate;
+
+	get_value("can_bitrate", value, sizeof(value));
+	bitrate = strtoul(value, NULL, 10);
+
+	if (bitrate != 0)
+		fprintf(stdout,
+			"%s: bitrate %lu\n", dev, bitrate);
+	else
+		fprintf(stdout,
+			"%s: bitrate unknown\n", dev);
+}
+
+static void do_set_bitrate(int argc, char* argv[])
+{
+	ssize_t err;
+
+	err = set_value("can_bitrate", argv[3]);
+	if (err < 0) {
+		fprintf(stderr, "setting bitrate failed:");
+		perror(NULL);
 		exit(EXIT_FAILURE);
 	}
+}
 
-	state = (can_state_t *)&ifr.ifr_ifru;
-	fprintf(stdout, "%s: state ", ifr.ifr_name);
-	switch (*state) {
-	case CAN_STATE_BUS_PASSIVE:
-		str = "bus passive";
-		break;
-	case CAN_STATE_ACTIVE:
-		str = "active";
-		break;
-	case CAN_STATE_BUS_WARNING:
-		str = "warning";
-		break;
-	case CAN_STATE_BUS_OFF:
-		str = "bus off";
-		break;
-	default:
-		str = "<unknown>";
+static void cmd_bitrate(int argc, char *argv[])
+{
+	if (argc >= 4) {
+		do_set_bitrate(argc, argv);
 	}
-	fprintf(stdout, "%s \n", str);
+	do_show_bitrate(argc, argv);
 
 	exit(EXIT_SUCCESS);
+}
+
+
+
+static void do_show_state(int argc, char *argv[])
+{
+	char value[VALUE_MAX];
+
+	get_value("can_state", value, sizeof(value));
+
+	fprintf(stdout, "%s\n", value);
 }
 
 static void cmd_state(int argc, char *argv[])
@@ -308,38 +315,132 @@ static void cmd_state(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-static void cmd_show_interface(int argc, char *argv[])
+
+
+static void do_show_ctrlmode(int argc, char *argv[])
 {
-	do_show_baudrate(argc, argv);
- 	do_show_state(argc, argv);
+	char value[VALUE_MAX];
+
+	get_value("can_ctrlmode", value, sizeof(value));
+
+	fprintf(stdout, "%s\n", value);
+}
+
+static void do_set_ctrlmode(int argc, char* argv[])
+{
+	ssize_t err;
+
+	err = set_value("can_ctrlmode", argv[3]);
+	if (err < 0) {
+		fprintf(stderr, "setting ctrlmode failed:");
+		perror(NULL);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void cmd_ctrlmode(int argc, char *argv[])
+{
+	if (argc >= 4) {
+		do_set_ctrlmode(argc, argv);
+	}
+	do_show_ctrlmode(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
 
+
+
+static void cmd_baudrate(int argc, char *argv[])
+{
+	fprintf(stderr, "%s: baudrate is deprecated, pleae use bitrate\n",
+		argv[0]);
+	
+	exit(EXIT_FAILURE);
+}
+
+static void cmd_show_interface(int argc, char *argv[])
+{
+	do_show_bitrate(argc, argv);
+	do_show_state(argc, argv);
+	do_show_ctrlmode(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
+
+
+static void get_sysfs_path(const char *_dev)
+{
+	struct stat sb;
+	char *sysfs_path_env;
+	char entry_path[SYSFS_PATH_MAX];
+	int err;
+
+	dev = _dev;
+
+	sysfs_path_env = getenv(SYSFS_PATH_ENV);
+
+	if (sysfs_path_env != NULL) {
+		size_t len;
+
+		strncpy(sysfs_path, sysfs_path_env, sizeof(sysfs_path));
+
+		len = strlen(sysfs_path);
+		while (len > 0 && sysfs_path[len-1] == '/')
+			sysfs_path[--len] = '\0';
+	} else {
+		strncpy(sysfs_path, SYSFS_MNT_PATH, sizeof(sysfs_path));
+	}
+
+	strncat(sysfs_path, CLASS_NET, sizeof(sysfs_path));
+	strncat(sysfs_path, dev, sizeof(sysfs_path));
+	strncat(sysfs_path, "/", sizeof(sysfs_path));
+	sysfs_path[sizeof(sysfs_path) - 1] = 0;
+
+	/*
+	 * test if interface is present
+	 * and actually a CAN interface
+	 * using "can_bitrate" as indicator
+	 */
+	strncpy(entry_path, sysfs_path, sizeof(entry_path));
+	strncat(entry_path, "can_bitrate", sizeof(entry_path));
+	entry_path[sizeof(entry_path) - 1] = 0;
+
+	err = stat(entry_path, &sb);
+	if (err) {
+		fprintf(stderr, "opening CAN interface '%s' in sysfs failed, "
+			"maybe not a CAN interface\n"
+			"%s: ",
+			dev, entry_path);
+		perror(NULL);
+		exit(EXIT_FAILURE);
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
+
 	if ((argc < 2) || !strcmp(argv[1], "--help"))
 		help();
 
-	if ((s = socket(AF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
-
-	strncpy(ifr.ifr_name, argv[1], IFNAMSIZ);
+	get_sysfs_path(argv[1]);
 
 	if (argc < 3)
 		cmd_show_interface(argc, argv);
 
 	if (!strcmp(argv[2], "baudrate"))
 		cmd_baudrate(argc, argv);
+	if (!strcmp(argv[2], "bitrate"))
+		cmd_bitrate(argc, argv);
 	if (!strcmp(argv[2], "mode"))
-		cmd_mode(argc, argv);
+		cmd_ctrlmode(argc, argv);
+#if 0
 	if (!strcmp(argv[2], "setentry"))
 		cmd_setentry(argc, argv);
+#endif
 
-/* 	if (!strcmp(argv[2], "state")) */
-/* 		cmd_state(argc, argv); */
+	if (!strcmp(argv[2], "state"))
+		cmd_state(argc, argv);
 
 	help();
 
