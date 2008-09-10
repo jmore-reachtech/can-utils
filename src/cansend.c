@@ -24,7 +24,7 @@ extern int optind, opterr, optopt;
 static void print_usage(char *prg)
 {
 	fprintf(stderr,
-		"Usage: %s <can-interface> [Options] <can-msg>\n"
+		"Usage: %s [<can-interface>] [Options] <can-msg>\n"
 		"<can-msg> can consist of up to 8 bytes given as a space separated list\n"
 		"Options:\n"
 		" -i, --identifier=ID	CAN Identifier (default = 1)\n"
@@ -47,13 +47,14 @@ enum {
 
 int main(int argc, char **argv)
 {
-	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
-	struct sockaddr_can addr;
-	int s, opt, ret, i, dlc = 0, rtr = 0, extended = 0;
 	struct can_frame frame;
-	int verbose = 0;
-	int loopcount = 1, infinite = 0;
 	struct ifreq ifr;
+	struct sockaddr_can addr;
+	char *interface = "can0";
+	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
+	int loopcount = 1, infinite = 0;
+	int s, opt, ret, i, dlc = 0, rtr = 0, extended = 0;
+	int verbose = 0;
 
 	struct option long_options[] = {
 		{ "help",	no_argument,		0, 'h' },
@@ -121,19 +122,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (optind == argc) {
-		print_usage(basename(argv[0]));
-		exit(0);
-	}
+	if (optind != argc)
+		interface = argv[optind];
 
-	if (argv[optind] == NULL) {
-		fprintf(stderr, "No Interface supplied\n");
-		exit(-1);
-	}
-
-	if (verbose)
-		printf("interface = %s, family = %d, type = %d, proto = %d\n",
-		       argv[optind], family, type, proto);
+	printf("interface = %s, family = %d, type = %d, proto = %d\n",
+	       interface, family, type, proto);
 
 	s = socket(family, type, proto);
 	if (s < 0) {
@@ -142,7 +135,7 @@ int main(int argc, char **argv)
 	}
 
 	addr.can_family = family;
-	strcpy(ifr.ifr_name, argv[optind]);
+	strcpy(ifr.ifr_name, interface);
 	if (ioctl(s, SIOCGIFINDEX, &ifr)) {
 		perror("ioctl");
 		return 1;
@@ -153,7 +146,6 @@ int main(int argc, char **argv)
 		perror("bind");
 		return 1;
 	}
-
 
 	for (i = optind + 1; i < argc; i++) {
 		frame.data[dlc] = strtoul(argv[i], NULL, 0);

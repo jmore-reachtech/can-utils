@@ -25,25 +25,24 @@ extern int optind, opterr, optopt;
 static int	s = -1;
 static int	running = 1;
 
-enum
-{
+enum {
 	VERSION_OPTION = CHAR_MAX + 1,
 	FILTER_OPTION,
 };
 
 static void print_usage(char *prg)
 {
-        fprintf(stderr, "Usage: %s <can-interface> [Options]\n"
-                        "Options:\n"
-	                " -f, --family=FAMILY\t"	"protocol family (default PF_CAN = %d)\n"
-                        " -t, --type=TYPE\t"		"socket type, see man 2 socket (default SOCK_RAW = %d)\n"
-                        " -p, --protocol=PROTO\t"	"CAN protocol (default CAN_RAW = %d)\n"
-			"     --filter=id:mask[:id:mask]...\n"
-			"\t\t\t"			"apply filter\n"
-			" -h, --help\t\t"		"this help\n"
-			" -o <filename>\t\t"		"output into filename\n"
-			" -d\t\t\t"			"daemonize\n"
-			"     --version\t\t"		"print version information and exit\n",
+        fprintf(stderr, "Usage: %s [<can-interface>] [Options]\n"
+		"Options:\n"
+		" -f, --family=FAMILY\t"	"protocol family (default PF_CAN = %d)\n"
+		" -t, --type=TYPE\t"		"socket type, see man 2 socket (default SOCK_RAW = %d)\n"
+		" -p, --protocol=PROTO\t"	"CAN protocol (default CAN_RAW = %d)\n"
+		"     --filter=id:mask[:id:mask]...\n"
+		"\t\t\t"			"apply filter\n"
+		" -h, --help\t\t"		"this help\n"
+		" -o <filename>\t\t"		"output into filename\n"
+		" -d\t\t\t"			"daemonize\n"
+		"     --version\t\t"		"print version information and exit\n",
 		prg, PF_CAN, SOCK_RAW, CAN_RAW);
 }
 
@@ -73,18 +72,19 @@ int add_filter(u_int32_t id, u_int32_t mask)
 
 int main(int argc, char **argv)
 {
-	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
-	int opt, optdaemon = 0;
-	struct sockaddr_can addr;
 	struct can_frame frame;
-	int nbytes, i;
 	struct ifreq ifr;
-	char *ptr;
-	char *optout = NULL;
-	u_int32_t id, mask;
+	struct sockaddr_can addr;
 	FILE *out = stdout;
+	char *interface = "can0";
+	char *optout = NULL;
+	char *ptr;
 	char buf[BUF_SIZ];
+	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 	int n = 0, err;
+	int nbytes, i;
+	int opt, optdaemon = 0;
+	uint32_t id, mask;
 
 	signal(SIGPIPE, SIG_IGN);
 
@@ -153,21 +153,23 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (optind == argc) {
-		print_usage(basename(argv[0]));
-		exit (EXIT_SUCCESS);
-	}
+	if (optind != argc)
+		interface = argv[optind];
 	
-	fprintf(out, "interface = %s, family = %d, type = %d, proto = %d\n",
-		argv[optind], family, type, proto);
+	printf("interface = %s, family = %d, type = %d, proto = %d\n",
+	       interface, family, type, proto);
+
 	if ((s = socket(family, type, proto)) < 0) {
 		perror("socket");
 		return 1;
 	}
 
 	addr.can_family = family;
-	strncpy(ifr.ifr_name, argv[optind], sizeof(ifr.ifr_name));
-	ioctl(s, SIOCGIFINDEX, &ifr);
+	strncpy(ifr.ifr_name, interface, sizeof(ifr.ifr_name));
+	if (ioctl(s, SIOCGIFINDEX, &ifr)) {
+		perror("ioctl");
+		return 1;
+	}
 	addr.can_ifindex = ifr.ifr_ifindex;
 
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
@@ -175,8 +177,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if(filter) {
-		if(setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, filter, filter_count * sizeof(struct can_filter)) != 0) {
+	if (filter) {
+		if (setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, filter,
+			       filter_count * sizeof(struct can_filter)) != 0) {
 			perror("setsockopt");
 			exit(1);
 		}

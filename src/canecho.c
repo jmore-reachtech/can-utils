@@ -20,28 +20,27 @@
 
 extern int optind, opterr, optopt;
 
-static int	running = 1;
+static int running = 1;
 
-enum
-{
+enum {
 	VERSION_OPTION = CHAR_MAX + 1,
 };
 
 void print_usage(char *prg)
 {
         fprintf(stderr, "Usage: %s <can-interface> [<can-interface-out>] [Options]\n"
-			"\n"
-			"Send all messages received on <can-interface> to  <can-interface-out>\n"
-			"If <can-interface-out> is omitted, then <can_interface> is used for sending\n"
-			"\n"
-                        "Options:\n"
-	                " -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
-                        " -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
-                        " -p, --protocol=PROTO  CAN protocol (default CAN_RAW = %d)\n"
-                        " -v, --verbose         be verbose\n"
-			" -h, --help            this help\n"
-			"     --version         print version information and exit\n",
-				prg, PF_CAN, SOCK_RAW, CAN_RAW);
+		"\n"
+		"Send all messages received on <can-interface> to <can-interface-out>\n"
+		"If <can-interface-out> is omitted, then <can_interface> is used for sending\n"
+		"\n"
+		"Options:\n"
+		" -f, --family=FAMILY   Protocol family (default PF_CAN = %d)\n"
+		" -t, --type=TYPE       Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
+		" -p, --protocol=PROTO  CAN protocol (default CAN_RAW = %d)\n"
+		" -v, --verbose         be verbose\n"
+		" -h, --help            this help\n"
+		"     --version         print version information and exit\n",
+		prg, PF_CAN, SOCK_RAW, CAN_RAW);
 }
 
 void sigterm(int signo)
@@ -51,23 +50,21 @@ void sigterm(int signo)
 
 int main(int argc, char **argv)
 {
-	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
-	int opt;
-
-	int s[2];
-	struct sockaddr_can addr[2];
-	struct ifreq ifr[2];
-	char *intf_name[2];
-
 	struct can_frame frame;
+	struct ifreq ifr[2];
+	struct sockaddr_can addr[2];
+	char *intf_name[2];
+	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 	int nbytes, i, out;
+	int opt;
+	int s[2];
 	int verbose = 0;
 
 	signal(SIGTERM, sigterm);
 	signal(SIGHUP, sigterm);
 	signal(SIGINT, sigterm);
 
-	struct option		long_options[] = {
+	struct option long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "family", required_argument, 0, 'f' },
 		{ "protocol", required_argument, 0, 'p' },
@@ -79,33 +76,33 @@ int main(int argc, char **argv)
 
 	while ((opt = getopt_long(argc, argv, "hf:t:p:v", long_options, NULL)) != -1) {
 		switch (opt) {
-			case 'f':
-				family = atoi(optarg);
-				break;
+		case 'f':
+			family = atoi(optarg);
+			break;
 
-			case 't':
-				type = atoi(optarg);
-				break;
+		case 't':
+			type = atoi(optarg);
+			break;
 
-			case 'p':
-				proto = atoi(optarg);
-				break;
+		case 'p':
+			proto = atoi(optarg);
+			break;
 
-			case 'v':
-				verbose = 1;
-				break;
+		case 'v':
+			verbose = 1;
+			break;
 
-			case 'h':
-				print_usage(basename(argv[0]));
-				exit(0);
+		case 'h':
+			print_usage(basename(argv[0]));
+			exit(0);
 
-			case VERSION_OPTION:
-				printf("canecho %s\n",VERSION);
-				exit(0);
+		case VERSION_OPTION:
+			printf("canecho %s\n",VERSION);
+			exit(0);
 
-			default:
-				fprintf(stderr, "Unknown option %c\n", opt);
-				break;
+		default:
+			fprintf(stderr, "Unknown option %c\n", opt);
+			break;
 		}
 	}
 
@@ -121,7 +118,7 @@ int main(int argc, char **argv)
 		intf_name[1] = argv[optind];
 
 	printf("interface-in = %s, interface-out = %s, family = %d, type = %d, proto = %d\n",
-			intf_name[0], intf_name[1], family, type, proto);
+	       intf_name[0], intf_name[1], family, type, proto);
 
 	if (intf_name[0] == intf_name[1])
 		out = 0;
