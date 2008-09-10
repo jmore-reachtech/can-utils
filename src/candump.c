@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <stdint.h>
 
 #include <net/if.h>
 
