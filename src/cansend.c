@@ -47,7 +47,9 @@ enum {
 
 int main(int argc, char **argv)
 {
-	struct can_frame frame;
+	struct can_frame frame = {
+		.can_id = 1,
+	};
 	struct ifreq ifr;
 	struct sockaddr_can addr;
 	char *interface = "can0";
@@ -69,8 +71,6 @@ int main(int argc, char **argv)
 		{ "loop",	optional_argument,	0, 'l'},
 		{ 0,		0,			0, 0 },
 	};
-
-	frame.can_id = 1;
 
 	while ((opt = getopt_long(argc, argv, "hf:t:p:vi:l::re", long_options, NULL)) != -1) {
 		switch (opt) {
@@ -155,11 +155,16 @@ int main(int argc, char **argv)
 	}
 	frame.can_dlc = dlc;
 
+
+	if (extended) {
+		frame.can_id &= CAN_EFF_MASK;
+		frame.can_id |= CAN_EFF_FLAG;
+	} else {
+		frame.can_id &= CAN_SFF_MASK;
+	}
+
 	if (rtr)
 		frame.can_id |= CAN_RTR_FLAG;
-
-	if (extended)
-		frame.can_id |= CAN_EFF_FLAG;
 
 	if (verbose) {
 		printf("id: %d ", frame.can_id);
