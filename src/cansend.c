@@ -33,8 +33,8 @@ static void print_usage(char *prg)
 		" -f, --family=FAMILY	Protocol family (default PF_CAN = %d)\n"
 		" -t, --type=TYPE	Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
 		" -p, --protocol=PROTO	CAN protocol (default CAN_RAW = %d)\n"
-		" -l                    send message infinite times\n"
-		"     --loop=COUNT      send message COUNT times\n"
+		" -l			send message infinite times\n"
+		"     --loop=COUNT	send message COUNT times\n"
 		" -v, --verbose		be verbose\n"
 		" -h, --help		this help\n"
 		"     --version		print version information and exit\n",
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	if (optind == argc) {
 		print_usage(basename(argv[0]));
 		exit(0);
-        }
+	}
 	
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "No Interface supplied\n");
