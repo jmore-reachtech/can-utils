@@ -4,5 +4,11 @@ man_MANS = \
 	canecho.8 \
 	cansend.8
 
+EXTRA_DIST = \
+	canconfig.8 \
+	candump.8 \
+	canecho.8 \
+	cansend.8
+
 MAINTAINERCLEANFILES = \
 	GNUmakefile.in
