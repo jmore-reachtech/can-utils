@@ -43,13 +43,31 @@
 
 static char sysfs_path[SYSFS_PATH_MAX];
 static const char *dev;
+static int version;
+
+enum can_sysfs_version {
+	SV_0,
+	SV_1,
+	SV_MAX,
+};
+
+enum can_sysfs_entries {
+	SE_BITRATE,
+	SE_MAX,
+};
+
+
+static const char *can_sysfs[SV_MAX][SE_MAX] = {
+	[SV_0][SE_BITRATE] = "can_bitrate",
+	[SV_1][SE_BITRATE] = "can_bittiming/bitrate",
+};
 
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
 		"canconfig <dev> bitrate { BR }\n\t\t"
 		"BR := <bitrate in Hz>\n\t\t"
-		"canconfig <dev> mode\n" 
+		"canconfig <dev> mode\n"
 #if 0
 		"MODE\n\t\t"
 		"MODE := { start }\n\t"
@@ -264,7 +282,7 @@ static void do_show_bitrate(int argc, char* argv[])
 	char value[VALUE_MAX];
 	unsigned long bitrate;
 
-	get_value("can_bitrate", value, sizeof(value));
+	get_value(can_sysfs[version][SE_BITRATE], value, sizeof(value));
 	bitrate = strtoul(value, NULL, 10);
 
 	if (bitrate != 0)
@@ -279,7 +297,7 @@ static void do_set_bitrate(int argc, char* argv[])
 {
 	ssize_t err;
 
-	err = set_value("can_bitrate", argv[3]);
+	err = set_value(can_sysfs[version][SE_BITRATE], argv[3]);
 	if (err < 0) {
 		fprintf(stderr, "setting bitrate failed:");
 		perror(NULL);
@@ -354,7 +372,7 @@ static void cmd_baudrate(int argc, char *argv[])
 {
 	fprintf(stderr, "%s: baudrate is deprecated, pleae use bitrate\n",
 		argv[0]);
-	
+
 	exit(EXIT_FAILURE);
 }
 
@@ -368,14 +386,11 @@ static void cmd_show_interface(int argc, char *argv[])
 }
 
 
-static void get_sysfs_path(const char *_dev)
+static int get_sysfs_path_try(int version)
 {
 	struct stat sb;
 	char *sysfs_path_env;
 	char entry_path[SYSFS_PATH_MAX];
-	int err;
-
-	dev = _dev;
 
 	sysfs_path_env = getenv(SYSFS_PATH_ENV);
 
@@ -402,20 +417,33 @@ static void get_sysfs_path(const char *_dev)
 	 * using "can_bitrate" as indicator
 	 */
 	strncpy(entry_path, sysfs_path, sizeof(entry_path));
-	strncat(entry_path, "can_bitrate", sizeof(entry_path));
+	strncat(entry_path, can_sysfs[version][SE_BITRATE], sizeof(entry_path));
 	entry_path[sizeof(entry_path) - 1] = 0;
 
-	err = stat(entry_path, &sb);
-	if (err) {
-		fprintf(stderr, "opening CAN interface '%s' in sysfs failed, "
-			"maybe not a CAN interface\n"
-			"%s: ",
-			dev, entry_path);
-		perror(NULL);
-		exit(EXIT_FAILURE);
-	}
+	return stat(entry_path, &sb);
 }
 
+static void get_sysfs_path(const char *_dev)
+{
+	int i, err;
+
+	dev = _dev;
+
+	for (i = 0; i < SV_MAX; i++) {
+		err = get_sysfs_path_try(i);
+		if (!err) {
+			version = i;
+			return;
+		}
+	}
+
+	fprintf(stderr, "opening CAN interface '%s' in sysfs failed, "
+		"maybe not a CAN interface\n",
+		dev);
+	perror(NULL);
+
+	exit(EXIT_FAILURE);
+}
 
 int main(int argc, char *argv[])
 {
