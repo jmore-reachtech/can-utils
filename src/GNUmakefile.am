@@ -7,6 +7,9 @@ bin_PROGRAMS = \
 sbin_PROGRAMS = \
 	canconfig
 
+canconfig_LDADD = \
+	$(libsocketcan_nl_LIBS)
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \

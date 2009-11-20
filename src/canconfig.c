@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2005, 2008 Marc Kleine-Budde <mkl@pengutronix.de>, Pengutronix
  * Copyright (C) 2007 Juergen Beisert <jbe@pengutronix.de>, Pengutronix
+ * Copyright (C) 2009 Luotao Fu <l.fu@pengutronix.de>, Pengutronix
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the version 2 of the GNU General Public License
@@ -30,44 +31,30 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <socketcan_netlink.h>
+
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define VALUE_MAX		256
-#define SYSFS_PATH_MAX		256
-#define SYSFS_MNT_PATH		"/sys"
-#define SYSFS_PATH_ENV		"SYSFS_PATH"
-
-#define CLASS_NET		"/class/net/"
-
-static char sysfs_path[SYSFS_PATH_MAX];
-static const char *dev;
-static int version;
-
-enum can_sysfs_version {
-	SV_0,
-	SV_1,
-	SV_MAX,
-};
-
-enum can_sysfs_entries {
-	SE_BITRATE,
-	SE_MAX,
-};
-
-
-static const char *can_sysfs[SV_MAX][SE_MAX] = {
-	[SV_0][SE_BITRATE] = "can_bitrate",
-	[SV_1][SE_BITRATE] = "can_bittiming/bitrate",
+const char *can_modes[CAN_STATE_MAX] = {
+	"ACTIVE",
+	"WARNING",
+	"PASSIVE",
+	"BUS OFF",
+	"STOPPED",
+	"SLEEPING"
 };
 
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
 		"canconfig <dev> bitrate { BR }\n\t\t"
-		"BR := <bitrate in Hz>\n\t\t"
-		"canconfig <dev> mode\n"
+		"BR := <bitrate in Hz>\n\t"
+		"canconfig <dev> restart-ms {RESTART_MS}\n\t\t"
+		"RESTART_MS := <autorestart interval in ms>\n\t"
+		"canconfig <dev> mode\n\t"
+		"canconfig <dev> restart\n"
 #if 0
 		"MODE\n\t\t"
 		"MODE := { start }\n\t"
@@ -87,222 +74,22 @@ static void help(void)
 	exit(EXIT_FAILURE);
 }
 
-
-static void make_path(char *key_path, const char *key, size_t key_path_len)
-{
-	strncpy(key_path, sysfs_path, key_path_len);
-	strncat(key_path, key, key_path_len);
-	key_path[key_path_len - 1] = 0;
-}
-
-
-static ssize_t get_value(const char* key, char *value, size_t value_len)
-{
-	char key_path[SYSFS_PATH_MAX];
-	int fd;
-	ssize_t len;
-
-	make_path(key_path, key, sizeof(key_path));
-
-	fd = open(key_path, O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "opening '%s' failed: ",
-			key_path);
-		perror(NULL);
-		exit(EXIT_FAILURE);
-	}
-
-	len = read(fd, value, value_len - 1);
-	close(fd);
-	if (len < 0) {
-		perror("read");
-		exit(EXIT_FAILURE);
-	}
-	value[len] = 0;
-
-	/* remove trailing newline(s) */
-	while (len > 0 && value[len - 1] == '\n')
-		value[--len] = '\0';
-
-	return len;
-}
-
-
-static ssize_t set_value(const char* key, const char *value)
-{
-	char key_path[SYSFS_PATH_MAX];
-	int fd;
-	ssize_t len;
-
-	make_path(key_path, key, sizeof(key_path));
-
-	fd = open(key_path, O_WRONLY);
-	if (fd == -1) {
-		fprintf(stderr, "opening '%s' failed: ",
-			key_path);
-		perror(NULL);
-		exit(EXIT_FAILURE);
-	}
-
-	len = write(fd, value, strlen(value));
-	close(fd);
-
-	return len;
-}
-
-
-
-#if 0
-
-/*
- * setup a custom bitrate for a specific interface
- * Options are:
- * canconfig <interface> setentry
- * [bitrate <number>] | [tq <number>] | [err <number>] [prop_seg <number>] |
- *     [phase_seg1 <number>] | [phase_seg2 <number>] | [sjw <number>] | [sam <number>]
- */
-static void cmd_setentry(int argc, char *argv[])
-{
-	int done, i;
-	struct can_bit_time_custom *bit_time = (struct can_bit_time_custom *)&ifr.ifr_ifru;
-
-	/* mark each field as unintialised */
-	bit_time->bit_rate = bit_time->tq = bit_time->bit_error = -1;
-	bit_time->prop_seg = bit_time->phase_seg1 =
-		bit_time->phase_seg2 = -1;
-	bit_time->sjw = -1;
-	bit_time->sam = -1;
-
-	/* runtime testing until everything here is in mainline */
-	if (sizeof(struct can_bit_time_custom) > sizeof(ifr.ifr_ifru)) {
-		printf("Error can_bit_time_custom to large! (%d, %d)",
-		       sizeof(struct can_bit_time_custom), sizeof(ifr.ifr_ifru));
-		exit(EXIT_FAILURE);
-	}
-
-	/*
-	 * Note: all values must be given. There is no default
-	 * value for any one of these
-	 */
-	if (argc < 19)
-		help();
-
-	done = 3;
-
-	while ((done + 1) < argc) {
-		if (!strcmp(argv[done], "bitrate")) {
-			bit_time->bit_rate = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "tq")) {
-			bit_time->tq = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "err")) {
-			bit_time->bit_error = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "prop_seg")) {
-			bit_time->prop_seg = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "phase_seg1")) {
-			bit_time->phase_seg1 = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "phase_seg2")) {
-			bit_time->phase_seg2 = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "sjw")) {
-			bit_time->sjw = (uint32_t)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-		if (!strcmp(argv[done], "sam")) {
-			bit_time->sam = (int)strtoul(argv[++done], NULL, 0);
-			done++;
-			continue;
-		}
-	}
-
-	if (bit_time->bit_rate == -1) {
-		fprintf(stderr, "missing bit_rate value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->tq == -1) {
-		fprintf(stderr, "missing tq value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->bit_error == -1) {
-		fprintf(stderr, "missing err value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->prop_seg == (__u8)-1) {
-		fprintf(stderr, "missing prop_seg value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->phase_seg1 == (__u8)-1) {
-		fprintf(stderr, "missing phase_seg1 value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->phase_seg2 == (__u8)-1) {
-		fprintf(stderr, "missing phase_seg2 value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->sjw == -1) {
-		fprintf(stderr, "missing sjw value!\n");
-		exit(EXIT_FAILURE);
-	}
-	if (bit_time->sam == -1) {
-		fprintf(stderr, "missing sam value!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	i = ioctl(s, SIOCSCANDEDBITTIME, &ifr);
-	if (i < 0) {
-		perror("ioctl");
-		exit(EXIT_FAILURE);
-	}
-
-	exit(EXIT_SUCCESS);
-}
-
-#endif
-
-
 static void do_show_bitrate(int argc, char* argv[])
 {
-	char value[VALUE_MAX];
-	unsigned long bitrate;
+	struct can_bittiming bt;
 
-	get_value(can_sysfs[version][SE_BITRATE], value, sizeof(value));
-	bitrate = strtoul(value, NULL, 10);
-
-	if (bitrate != 0)
-		fprintf(stdout,
-			"%s: bitrate %lu\n", dev, bitrate);
+	if (scan_get_bittiming(argv[1], &bt) < 0)
+		fprintf(stdout, "%s: bitrate unknown\n", argv[1]);
 	else
 		fprintf(stdout,
-			"%s: bitrate unknown\n", dev);
+			"%s bitrate: %u\n", argv[1], bt.bitrate);
 }
 
 static void do_set_bitrate(int argc, char* argv[])
 {
-	ssize_t err;
-
-	err = set_value(can_sysfs[version][SE_BITRATE], argv[3]);
-	if (err < 0) {
-		fprintf(stderr, "setting bitrate failed:");
-		perror(NULL);
-		exit(EXIT_FAILURE);
-	}
+	if (scan_set_bitrate(argv[1], (__u32)strtoul(argv[3], NULL, 10)) < 0)
+		fprintf(stderr, "failed to set bitrate of %s to %lu\n",
+		       	argv[1], strtoul(argv[3], NULL, 10));
 }
 
 static void cmd_bitrate(int argc, char *argv[])
@@ -315,15 +102,17 @@ static void cmd_bitrate(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-
-
 static void do_show_state(int argc, char *argv[])
 {
-	char value[VALUE_MAX];
+	int state;
 
-	get_value("can_state", value, sizeof(value));
+	if (scan_get_state(argv[1], &state) < 0)
+		fprintf(stderr, "%s: failed to get state \n", argv[1]);
 
-	fprintf(stdout, "%s\n", value);
+	if (state >= 0 && state < CAN_STATE_MAX)
+		fprintf(stdout, "%s state: %s\n", argv[1], can_modes[state]);
+	else
+		fprintf(stderr, "%s: unknown state\n", argv[1]);
 }
 
 static void cmd_state(int argc, char *argv[])
@@ -333,40 +122,90 @@ static void cmd_state(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
+static inline void print_ctrlmode(__u32 cm_mask, __u32 cm_flag)
+{
+	__u32 active_cm = cm_mask & cm_flag;
+	fprintf(stdout, "loopback [%s], listenonly [%s], 3 samples [%s]\n",
+		(active_cm & CAN_CTRLMODE_LOOPBACK) ? "on" : "off",
+		(active_cm & CAN_CTRLMODE_LISTENONLY) ? "on" : "off",
+		(active_cm & CAN_CTRLMODE_3_SAMPLES) ? "on" : "off");
+}
 
+static void do_restart(int argc, char *argv[])
+{
+	if (scan_set_restart(argv[1]) < 0) {
+		fprintf(stderr, "%s: failed to restart\n", argv[1]);
+	} else {
+		fprintf(stdout, "%s restarted\n", argv[1]);
+	}
+}
+
+static void cmd_restart(int argc, char *argv[])
+{
+	do_restart(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
 
 static void do_show_ctrlmode(int argc, char *argv[])
 {
-	char value[VALUE_MAX];
-
-	get_value("can_ctrlmode", value, sizeof(value));
-
-	fprintf(stdout, "%s\n", value);
-}
-
-static void do_set_ctrlmode(int argc, char* argv[])
-{
-	ssize_t err;
-
-	err = set_value("can_ctrlmode", argv[3]);
-	if (err < 0) {
-		fprintf(stderr, "setting ctrlmode failed:");
-		perror(NULL);
-		exit(EXIT_FAILURE);
+	struct can_ctrlmode cm;
+	
+	if (scan_get_ctrlmode(argv[1], &cm) < 0) {
+		fprintf(stderr, "%s: failed to get controlmode\n", argv[1]);
+	} else {
+		fprintf(stdout, "%s mode: ", argv[1]);
+		print_ctrlmode(cm.mask, cm.flags);
 	}
 }
+
+#if 0
+static void do_set_ctrlmode(int argc, char* argv[])
+{
+}
+#endif
 
 static void cmd_ctrlmode(int argc, char *argv[])
 {
+#if 0
 	if (argc >= 4) {
 		do_set_ctrlmode(argc, argv);
 	}
+#endif
 	do_show_ctrlmode(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
 
+static void do_show_restart_ms(int argc, char* argv[])
+{
+	__u32 restart_ms;
 
+	if (scan_get_restart_ms(argv[1], &restart_ms) < 0)
+		fprintf(stderr, "%s: failed to get restart_ms\n", argv[1]);
+	else
+		fprintf(stdout,
+			"%s restart_ms: %u\n", argv[1], restart_ms);
+}
+
+static void do_set_restart_ms(int argc, char* argv[])
+{
+	if (scan_set_restart_ms(argv[1],
+				(__u32)strtoul(argv[3], NULL, 10)) < 0)
+		fprintf(stderr, "failed to set restart_ms of %s to %lu\n",
+		       	argv[1], strtoul(argv[3], NULL, 10));
+}
+
+static void cmd_restart_ms(int argc, char *argv[])
+{
+	if (argc >= 4) {
+		do_set_restart_ms(argc, argv);
+	}
+
+	do_show_restart_ms(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
 
 static void cmd_baudrate(int argc, char *argv[])
 {
@@ -381,77 +220,17 @@ static void cmd_show_interface(int argc, char *argv[])
 	do_show_bitrate(argc, argv);
 	do_show_state(argc, argv);
 	do_show_ctrlmode(argc, argv);
+	do_show_restart_ms(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
 
-
-static int get_sysfs_path_try(int version)
-{
-	struct stat sb;
-	char *sysfs_path_env;
-	char entry_path[SYSFS_PATH_MAX];
-
-	sysfs_path_env = getenv(SYSFS_PATH_ENV);
-
-	if (sysfs_path_env != NULL) {
-		size_t len;
-
-		strncpy(sysfs_path, sysfs_path_env, sizeof(sysfs_path));
-
-		len = strlen(sysfs_path);
-		while (len > 0 && sysfs_path[len-1] == '/')
-			sysfs_path[--len] = '\0';
-	} else {
-		strncpy(sysfs_path, SYSFS_MNT_PATH, sizeof(sysfs_path));
-	}
-
-	strncat(sysfs_path, CLASS_NET, sizeof(sysfs_path));
-	strncat(sysfs_path, dev, sizeof(sysfs_path));
-	strncat(sysfs_path, "/", sizeof(sysfs_path));
-	sysfs_path[sizeof(sysfs_path) - 1] = 0;
-
-	/*
-	 * test if interface is present
-	 * and actually a CAN interface
-	 * using "can_bitrate" as indicator
-	 */
-	strncpy(entry_path, sysfs_path, sizeof(entry_path));
-	strncat(entry_path, can_sysfs[version][SE_BITRATE], sizeof(entry_path));
-	entry_path[sizeof(entry_path) - 1] = 0;
-
-	return stat(entry_path, &sb);
-}
-
-static void get_sysfs_path(const char *_dev)
-{
-	int i, err;
-
-	dev = _dev;
-
-	for (i = 0; i < SV_MAX; i++) {
-		err = get_sysfs_path_try(i);
-		if (!err) {
-			version = i;
-			return;
-		}
-	}
-
-	fprintf(stderr, "opening CAN interface '%s' in sysfs failed, "
-		"maybe not a CAN interface\n",
-		dev);
-	perror(NULL);
-
-	exit(EXIT_FAILURE);
-}
 
 int main(int argc, char *argv[])
 {
 
 	if ((argc < 2) || !strcmp(argv[1], "--help"))
 		help();
-
-	get_sysfs_path(argv[1]);
 
 	if (argc < 3)
 		cmd_show_interface(argc, argv);
@@ -462,6 +241,11 @@ int main(int argc, char *argv[])
 		cmd_bitrate(argc, argv);
 	if (!strcmp(argv[2], "mode"))
 		cmd_ctrlmode(argc, argv);
+	if (!strcmp(argv[2], "restart"))
+		cmd_restart(argc, argv);
+	if (!strcmp(argv[2], "restart-ms"))
+		cmd_restart_ms(argc, argv);
+
 #if 0
 	if (!strcmp(argv[2], "setentry"))
 		cmd_setentry(argc, argv);
