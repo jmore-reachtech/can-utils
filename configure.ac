@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
-AC_INIT([canutils], [4.0-trunk], [bugs@pengutronix.de])
+AC_INIT([canutils], [4.0.0], [bugs@pengutronix.de])
 AC_CONFIG_HEADERS([include/can_config.h])
 AC_CONFIG_SRCDIR([src/canconfig.c])
 AC_CONFIG_MACRO_DIR([config/m4])
