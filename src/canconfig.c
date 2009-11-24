@@ -51,7 +51,7 @@ static void help(void)
 	fprintf(stderr, "usage:\n\t"
 		"canconfig <dev> bitrate { BR }\n\t\t"
 		"BR := <bitrate in Hz>\n\t"
-		"canconfig <dev> restart-ms {RESTART_MS}\n\t\t"
+		"canconfig <dev> restart-ms { RESTART_MS }\n\t\t"
 		"RESTART_MS := <autorestart interval in ms>\n\t"
 		"canconfig <dev> mode\n\t"
 		"canconfig <dev> restart\n"
@@ -87,9 +87,11 @@ static void do_show_bitrate(int argc, char* argv[])
 
 static void do_set_bitrate(int argc, char* argv[])
 {
-	if (scan_set_bitrate(argv[1], (__u32)strtoul(argv[3], NULL, 10)) < 0)
+	if (scan_set_bitrate(argv[1], (__u32)strtoul(argv[3], NULL, 10)) < 0) {
 		fprintf(stderr, "failed to set bitrate of %s to %lu\n",
 		       	argv[1], strtoul(argv[3], NULL, 10));
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void cmd_bitrate(int argc, char *argv[])
@@ -106,8 +108,10 @@ static void do_show_state(int argc, char *argv[])
 {
 	int state;
 
-	if (scan_get_state(argv[1], &state) < 0)
+	if (scan_get_state(argv[1], &state) < 0) {
 		fprintf(stderr, "%s: failed to get state \n", argv[1]);
+		exit(EXIT_FAILURE);
+	}
 
 	if (state >= 0 && state < CAN_STATE_MAX)
 		fprintf(stdout, "%s state: %s\n", argv[1], can_modes[state]);
@@ -135,6 +139,7 @@ static void do_restart(int argc, char *argv[])
 {
 	if (scan_set_restart(argv[1]) < 0) {
 		fprintf(stderr, "%s: failed to restart\n", argv[1]);
+		exit(EXIT_FAILURE);
 	} else {
 		fprintf(stdout, "%s restarted\n", argv[1]);
 	}
@@ -153,6 +158,7 @@ static void do_show_ctrlmode(int argc, char *argv[])
 	
 	if (scan_get_ctrlmode(argv[1], &cm) < 0) {
 		fprintf(stderr, "%s: failed to get controlmode\n", argv[1]);
+		exit(EXIT_FAILURE);
 	} else {
 		fprintf(stdout, "%s mode: ", argv[1]);
 		print_ctrlmode(cm.mask, cm.flags);
@@ -181,9 +187,10 @@ static void do_show_restart_ms(int argc, char* argv[])
 {
 	__u32 restart_ms;
 
-	if (scan_get_restart_ms(argv[1], &restart_ms) < 0)
+	if (scan_get_restart_ms(argv[1], &restart_ms) < 0) {
 		fprintf(stderr, "%s: failed to get restart_ms\n", argv[1]);
-	else
+		exit(EXIT_FAILURE);
+	} else
 		fprintf(stdout,
 			"%s restart_ms: %u\n", argv[1], restart_ms);
 }
@@ -191,9 +198,11 @@ static void do_show_restart_ms(int argc, char* argv[])
 static void do_set_restart_ms(int argc, char* argv[])
 {
 	if (scan_set_restart_ms(argv[1],
-				(__u32)strtoul(argv[3], NULL, 10)) < 0)
+				(__u32)strtoul(argv[3], NULL, 10)) < 0) {
 		fprintf(stderr, "failed to set restart_ms of %s to %lu\n",
 		       	argv[1], strtoul(argv[3], NULL, 10));
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void cmd_restart_ms(int argc, char *argv[])
