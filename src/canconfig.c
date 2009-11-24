@@ -46,6 +46,16 @@ const char *can_modes[CAN_STATE_MAX] = {
 	"SLEEPING"
 };
 
+/* this is shamelessly stolen from iproute and slightly modified */
+#define NEXT_ARG() \
+	do { \
+		argv++; \
+		if (--argc <= 0) { \
+			fprintf(stderr, "missing parameter for %s\n", *argv); \
+			exit(EXIT_FAILURE);\
+		}\
+	} while(0)
+
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
@@ -53,7 +63,8 @@ static void help(void)
 		"BR := <bitrate in Hz>\n\t"
 		"canconfig <dev> restart-ms { RESTART_MS }\n\t\t"
 		"RESTART_MS := <autorestart interval in ms>\n\t"
-		"canconfig <dev> mode\n\t"
+		"canconfig <dev> mode { MODE }\n\t\t"
+		"MODE := <[loopback|listen-only|triple-sampling] [on|off]>\n\t"
 		"canconfig <dev> restart\n"
 #if 0
 		"MODE\n\t\t"
@@ -126,15 +137,6 @@ static void cmd_state(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-static inline void print_ctrlmode(__u32 cm_mask, __u32 cm_flag)
-{
-	__u32 active_cm = cm_mask & cm_flag;
-	fprintf(stdout, "loopback [%s], listenonly [%s], 3 samples [%s]\n",
-		(active_cm & CAN_CTRLMODE_LOOPBACK) ? "on" : "off",
-		(active_cm & CAN_CTRLMODE_LISTENONLY) ? "on" : "off",
-		(active_cm & CAN_CTRLMODE_3_SAMPLES) ? "on" : "off");
-}
-
 static void do_restart(int argc, char *argv[])
 {
 	if (scan_set_restart(argv[1]) < 0) {
@@ -152,6 +154,15 @@ static void cmd_restart(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
+static inline void print_ctrlmode(__u32 cm_flags)
+{
+	fprintf(stdout,
+		"loopback[%s], listen-only[%s], tripple-sampling[%s]\n",
+		(cm_flags & CAN_CTRLMODE_LOOPBACK) ? "ON" : "OFF",
+		(cm_flags & CAN_CTRLMODE_LISTENONLY) ? "ON" : "OFF",
+		(cm_flags & CAN_CTRLMODE_3_SAMPLES) ? "ON" : "OFF");
+}
+
 static void do_show_ctrlmode(int argc, char *argv[])
 {
 	struct can_ctrlmode cm;
@@ -161,23 +172,59 @@ static void do_show_ctrlmode(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	} else {
 		fprintf(stdout, "%s mode: ", argv[1]);
-		print_ctrlmode(cm.mask, cm.flags);
+		print_ctrlmode(cm.flags);
 	}
 }
 
-#if 0
+/* this is shamelessly stolen from iproute and slightly modified */
+static void set_ctrlmode(char* name, char *arg,
+			 struct can_ctrlmode *cm, __u32 flags)
+{
+	if (strcmp(arg, "on") == 0) {
+		cm->flags |= flags;
+	} else if (strcmp(arg, "off") != 0) {
+		fprintf(stderr,
+			"Error: argument of \"%s\" must be \"on\" or \"off\" %s\n",
+			name, arg);
+		exit(EXIT_FAILURE);
+	}
+	cm->mask |= flags;
+}
+
 static void do_set_ctrlmode(int argc, char* argv[])
 {
+	struct can_ctrlmode cm;
+	const char *name = argv[1];
+
+	while (argc > 0) {
+		if (!strcmp(*argv, "loopback")) {
+			NEXT_ARG();
+			set_ctrlmode("loopback", *argv, &cm,
+				     CAN_CTRLMODE_LOOPBACK);
+		} else if (!strcmp(*argv, "listen-only")) {
+			NEXT_ARG();
+			set_ctrlmode("listen-only", *argv, &cm,
+				     CAN_CTRLMODE_LISTENONLY);
+		} else if (!strcmp(*argv, "triple-sampling")) {
+			NEXT_ARG();
+			set_ctrlmode("triple-sampling", *argv, &cm,
+				     CAN_CTRLMODE_3_SAMPLES);
+		}
+		argc--, argv++;
+	}
+
+	if (scan_set_ctrlmode(name, cm.mask, cm.flags) < 0) {
+		fprintf(stderr, "%s: failed to set mode\n", argv[1]);
+		exit(EXIT_FAILURE);
+	}
 }
-#endif
 
 static void cmd_ctrlmode(int argc, char *argv[])
 {
-#if 0
 	if (argc >= 4) {
 		do_set_ctrlmode(argc, argv);
 	}
-#endif
+
 	do_show_ctrlmode(argc, argv);
 
 	exit(EXIT_SUCCESS);
@@ -228,8 +275,8 @@ static void cmd_show_interface(int argc, char *argv[])
 {
 	do_show_bitrate(argc, argv);
 	do_show_state(argc, argv);
-	do_show_ctrlmode(argc, argv);
 	do_show_restart_ms(argc, argv);
+	do_show_ctrlmode(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
