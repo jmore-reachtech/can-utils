@@ -133,6 +133,84 @@ static void cmd_bitrate(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
+static void do_set_bittiming(int argc, char *argv[])
+{
+	struct can_bittiming bt;
+	const char *name = argv[1];
+
+	memset(&bt, 0, sizeof(bt));
+
+	while (argc > 0) {
+		if (!strcmp(*argv, "tq")) {
+			NEXT_ARG();
+			bt.tq = (__u32)strtoul(*argv, NULL, 0);
+			continue;
+		}
+		if (!strcmp(*argv, "prop-seg")) {
+			NEXT_ARG();
+			bt.prop_seg = (__u32)strtoul(*argv, NULL, 0);
+			continue;
+		}
+		if (!strcmp(*argv, "phase-seg1")) {
+			NEXT_ARG();
+			bt.phase_seg1 = (__u32)strtoul(*argv, NULL, 0);
+			continue;
+		}
+		if (!strcmp(*argv, "phase-seg2")) {
+			NEXT_ARG();
+			bt.phase_seg2 =
+				(__u32)strtoul(*argv, NULL, 0);
+			continue;
+		}
+		if (!strcmp(*argv, "sjw")) {
+			NEXT_ARG();
+			bt.sjw =
+				(__u32)strtoul(*argv, NULL, 0);
+			continue;
+		}
+		argc--, argv++;
+	}
+	/* kernel will take a default sjw value if it's zero. all other
+	 * parameters have to be set */
+	if ( !bt.tq || !bt.prop_seg || !bt.phase_seg1 || !bt.phase_seg2) {
+		fprintf(stderr, "%s: missing bittiming parameters, "
+				"try help to figure out the correct format\n",
+				name);
+		exit(1);
+	}
+	if (scan_set_bittiming(name, &bt) < 0) {
+		fprintf(stderr, "%s: unable to set bittiming\n", name);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void do_show_bittiming(int argc, char *argv[])
+{
+	const char *name = argv[1];
+	struct can_bittiming bt;
+
+	if (scan_get_bittiming(name, &bt) < 0) {
+		fprintf(stderr, "%s: failed to get bittiming\n", argv[1]);
+		exit(EXIT_FAILURE);
+	} else
+		fprintf(stdout, "%s bittiming:\n\t"
+			"tq: %u, prop-seq: %u phase-seq1: %u phase-seq2: %u "
+			"sjw: %u, brp: %u\n",
+			name, bt.tq, bt.prop_seg, bt.phase_seg1, bt.phase_seg2,
+			bt.sjw, bt.brp);
+}
+
+static void cmd_bittiming(int argc, char *argv[])
+{
+	if (argc >= 4) {
+		do_set_bittiming(argc, argv);
+	}
+	do_show_bittiming(argc, argv);
+	do_show_bitrate(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
+
 static void do_show_state(int argc, char *argv[])
 {
 	int state;
@@ -314,18 +392,14 @@ int main(int argc, char *argv[])
 		cmd_baudrate(argc, argv);
 	if (!strcmp(argv[2], "bitrate"))
 		cmd_bitrate(argc, argv);
+	if (!strcmp(argv[2], "bittiming"))
+		cmd_bittiming(argc, argv);
 	if (!strcmp(argv[2], "mode"))
 		cmd_ctrlmode(argc, argv);
 	if (!strcmp(argv[2], "restart"))
 		cmd_restart(argc, argv);
 	if (!strcmp(argv[2], "restart-ms"))
 		cmd_restart_ms(argc, argv);
-
-#if 0
-	if (!strcmp(argv[2], "setentry"))
-		cmd_setentry(argc, argv);
-#endif
-
 	if (!strcmp(argv[2], "state"))
 		cmd_state(argc, argv);
 
