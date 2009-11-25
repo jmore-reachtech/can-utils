@@ -59,27 +59,22 @@ const char *can_modes[CAN_STATE_MAX] = {
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
-		"canconfig <dev> bitrate { BR }\n\t\t"
-		"BR := <bitrate in Hz>\n\t"
+		"canconfig <dev> bitrate { BR } [sample_point { SP }]\n\t\t"
+		"BR := <bitrate in Hz>\n\t\t"
+		"SP := <sample point {0...0.999}> (optional)\n\t"
+		"canconfig <dev> bittiming [ VALs ]\n\t\t"
+		"VALs := <tq | prop-seg | phase-seg1 | phase-seg2 | sjw>\n\t\t"
+		"tq <time quantum in ns>\n\t\t"
+		"prop_seg <no. in tq>\n\t\t"
+		"phase_seg1 <no. in tq>\n\t\t"
+		"phase_seg2 <no. in tq\n\t\t"
+		"sjw <no. in tq> (optional)\n\t"
 		"canconfig <dev> restart-ms { RESTART_MS }\n\t\t"
 		"RESTART_MS := <autorestart interval in ms>\n\t"
 		"canconfig <dev> mode { MODE }\n\t\t"
-		"MODE := <[loopback|listen-only|triple-sampling] [on|off]>\n\t"
-		"canconfig <dev> restart\n"
-#if 0
-		"MODE\n\t\t"
-		"MODE := { start }\n\t"
-		"canconfig <dev> setentry [ VALs ]\n\t\t"
-		"VALs := <bitrate | tq | err | prop_seg | phase_seg1 | phase_seg2 | sjw | sam>\n\t\t"
-		" bitrate <nominal bit rate to be set [Hz]>\n\t\t"
-		" tq <time quantum in ns>\n\t\t"
-		" err <max. allowed error in pps>\n\t\t"
-		" prop_seg <no. in tq>\n\t\t"
-		" phase_seg1 <no. in tq>\n\t\t"
-		" phase_seg2 <no. in tq\n\t\t"
-		" sjw <no. in tq>\n\t\t"
-		" sam <1 | 0> 1 for 3 times sampling, 0 else\n"
-#endif
+		"MODE := <[loopback | listen-only | triple-sampling] [on|off]>\n\t"
+		"canconfig <dev> restart\n\t"
+		"canconfig <dev> clockfreq\n"
 		);
 
 	exit(EXIT_FAILURE);
