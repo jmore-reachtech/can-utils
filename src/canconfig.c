@@ -295,7 +295,7 @@ static void do_show_ctrlmode(int argc, char *argv[])
 }
 
 /* this is shamelessly stolen from iproute and slightly modified */
-static void set_ctrlmode(char* name, char *arg,
+static inline void set_ctrlmode(char* name, char *arg,
 			 struct can_ctrlmode *cm, __u32 flags)
 {
 	if (strcmp(arg, "on") == 0) {
@@ -334,7 +334,7 @@ static void do_set_ctrlmode(int argc, char* argv[])
 	}
 
 	if (scan_set_ctrlmode(name, &cm) < 0) {
-		fprintf(stderr, "%s: failed to set mode\n", argv[1]);
+		fprintf(stderr, "%s: failed to set mode\n", name);
 		exit(EXIT_FAILURE);
 	}
 }
