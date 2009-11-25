@@ -233,6 +233,28 @@ static void cmd_state(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
+static void do_show_clockfreq(int argc, char *argv[])
+{
+	struct can_clock clock;
+	const char *name = argv[1];
+
+	memset(&clock, 0, sizeof(clock));
+	if (scan_get_clock(name, &clock) < 0) {
+		fprintf(stderr, "%s: failed to get clock parameters\n",
+				argv[1]);
+		exit(EXIT_FAILURE);
+	}
+
+	fprintf(stdout, "%s clock freq: %u\n", name, clock.freq);
+}
+
+static void cmd_clockfreq(int argc, char *argv[])
+{
+	do_show_clockfreq(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
+
 static void do_restart(int argc, char *argv[])
 {
 	if (scan_do_restart(argv[1]) < 0) {
@@ -374,6 +396,7 @@ static void cmd_show_interface(int argc, char *argv[])
 	do_show_bitrate(argc, argv);
 	do_show_state(argc, argv);
 	do_show_restart_ms(argc, argv);
+	do_show_clockfreq(argc, argv);
 	do_show_ctrlmode(argc, argv);
 
 	exit(EXIT_SUCCESS);
@@ -402,6 +425,8 @@ int main(int argc, char *argv[])
 		cmd_restart_ms(argc, argv);
 	if (!strcmp(argv[2], "state"))
 		cmd_state(argc, argv);
+	if (!strcmp(argv[2], "clockfreq"))
+		cmd_clockfreq(argc, argv);
 
 	help();
 
