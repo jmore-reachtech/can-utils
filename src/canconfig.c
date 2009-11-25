@@ -89,18 +89,36 @@ static void do_show_bitrate(int argc, char* argv[])
 {
 	struct can_bittiming bt;
 
-	if (scan_get_bittiming(argv[1], &bt) < 0)
-		fprintf(stdout, "%s: bitrate unknown\n", argv[1]);
-	else
+	if (scan_get_bittiming(argv[1], &bt) < 0) {
+		fprintf(stderr, "%s: failed to get bitrate\n", argv[1]);
+		exit(EXIT_FAILURE);
+	} else
 		fprintf(stdout,
-			"%s bitrate: %u\n", argv[1], bt.bitrate);
+			"%s bitrate: %u, sample point: %0.3f\n",
+			argv[1], bt.bitrate,
+			(float)((float)bt.sample_point / 1000));
 }
 
-static void do_set_bitrate(int argc, char* argv[])
+static void do_set_bitrate(int argc, char *argv[])
 {
-	if (scan_set_bitrate(argv[1], (__u32)strtoul(argv[3], NULL, 10)) < 0) {
+	__u32 bitrate = 0;
+	__u32 sample_point = 0;
+	const char *name = argv[1];
+
+	while (argc > 0) {
+		if (!strcmp(*argv, "bitrate")) {
+			NEXT_ARG();
+			bitrate =  (__u32)strtoul(*argv, NULL, 0);
+		} else if (!strcmp(*argv, "sample-point")) {
+			NEXT_ARG();
+			sample_point = (__u32)strtoul(*argv, NULL, 0);
+		}
+		argc--, argv++;
+	}
+
+	if (scan_set_bitrate(name, bitrate, sample_point) < 0) {
 		fprintf(stderr, "failed to set bitrate of %s to %lu\n",
-		       	argv[1], strtoul(argv[3], NULL, 10));
+			argv[1], strtoul(name, NULL, 10));
 		exit(EXIT_FAILURE);
 	}
 }
