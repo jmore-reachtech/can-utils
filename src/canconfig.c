@@ -139,7 +139,7 @@ static void cmd_state(int argc, char *argv[])
 
 static void do_restart(int argc, char *argv[])
 {
-	if (scan_set_restart(argv[1]) < 0) {
+	if (scan_do_restart(argv[1]) < 0) {
 		fprintf(stderr, "%s: failed to restart\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else {
@@ -166,7 +166,7 @@ static inline void print_ctrlmode(__u32 cm_flags)
 static void do_show_ctrlmode(int argc, char *argv[])
 {
 	struct can_ctrlmode cm;
-	
+
 	if (scan_get_ctrlmode(argv[1], &cm) < 0) {
 		fprintf(stderr, "%s: failed to get controlmode\n", argv[1]);
 		exit(EXIT_FAILURE);
@@ -196,6 +196,8 @@ static void do_set_ctrlmode(int argc, char* argv[])
 	struct can_ctrlmode cm;
 	const char *name = argv[1];
 
+	memset(&cm, 0, sizeof(cm));
+
 	while (argc > 0) {
 		if (!strcmp(*argv, "loopback")) {
 			NEXT_ARG();
@@ -213,7 +215,7 @@ static void do_set_ctrlmode(int argc, char* argv[])
 		argc--, argv++;
 	}
 
-	if (scan_set_ctrlmode(name, cm.mask, cm.flags) < 0) {
+	if (scan_set_ctrlmode(name, &cm) < 0) {
 		fprintf(stderr, "%s: failed to set mode\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
@@ -280,7 +282,6 @@ static void cmd_show_interface(int argc, char *argv[])
 
 	exit(EXIT_SUCCESS);
 }
-
 
 int main(int argc, char *argv[])
 {
