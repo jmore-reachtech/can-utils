@@ -113,8 +113,8 @@ static void do_set_bitrate(int argc, char *argv[])
 	}
 
 	if (scan_set_bitrate(name, bitrate, sample_point) < 0) {
-		fprintf(stderr, "failed to set bitrate of %s to %lu\n",
-			argv[1], strtoul(name, NULL, 10));
+		fprintf(stderr, "failed to set bitrate of %s to %u\n",
+			name, bitrate);
 		exit(EXIT_FAILURE);
 	}
 }
