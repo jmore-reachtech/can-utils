@@ -73,7 +73,8 @@ static void help(void)
 		"RESTART_MS := <autorestart interval in ms>\n\t"
 		"canconfig <dev> mode { MODE }\n\t\t"
 		"MODE := <[loopback | listen-only | triple-sampling] [on|off]>\n\t"
-		"canconfig <dev> restart\n\t"
+		"canconfig <dev> {ACTION}\n\t\t"
+		"ACTION := <[start|stop|restart]>"
 		"canconfig <dev> clockfreq\n"
 		);
 
@@ -267,6 +268,40 @@ static void cmd_restart(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
+static void do_start(int argc, char *argv[])
+{
+	if (scan_do_start(argv[1]) < 0) {
+		fprintf(stderr, "%s: failed to start\n", argv[1]);
+		exit(EXIT_FAILURE);
+	} else {
+		do_show_state(argc, argv);
+	}
+}
+
+static void cmd_start(int argc, char *argv[])
+{
+	do_start(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
+
+static void do_stop(int argc, char *argv[])
+{
+	if (scan_do_stop(argv[1]) < 0) {
+		fprintf(stderr, "%s: failed to stop\n", argv[1]);
+		exit(EXIT_FAILURE);
+	} else {
+		do_show_state(argc, argv);
+	}
+}
+
+static void cmd_stop(int argc, char *argv[])
+{
+	do_stop(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
+
 static inline void print_ctrlmode(__u32 cm_flags)
 {
 	fprintf(stdout,
@@ -416,6 +451,10 @@ int main(int argc, char *argv[])
 		cmd_ctrlmode(argc, argv);
 	if (!strcmp(argv[2], "restart"))
 		cmd_restart(argc, argv);
+	if (!strcmp(argv[2], "start"))
+		cmd_start(argc, argv);
+	if (!strcmp(argv[2], "stop"))
+		cmd_stop(argc, argv);
 	if (!strcmp(argv[2], "restart-ms"))
 		cmd_restart_ms(argc, argv);
 	if (!strcmp(argv[2], "state"))
