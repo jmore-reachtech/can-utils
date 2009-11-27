@@ -68,12 +68,12 @@ AC_CHECK_FUNCS([ \
 	strtoul \
 ])
 
-PKG_CHECK_MODULES([libsocketcan_nl],
-		  [libsocketcan-nl >= 0.0.3],
+PKG_CHECK_MODULES([libsocketcan],
+		  [libsocketcan >= 0.0.4],
 		  [],
-		  [AC_MSG_ERROR([*** libsocketcan-nl version above 0.0.3 not found on your system])])
-AC_SUBST(libsocketcan_nl_CFLAGS)
-AC_SUBST(libsocketcan_nl_LIBS)
+		  [AC_MSG_ERROR([*** libsocketcan version above 0.0.4 not found on your system])])
+AC_SUBST(libsocketcan_CFLAGS)
+AC_SUBST(libsocketcan_LIBS)
 
 #
 # Debugging

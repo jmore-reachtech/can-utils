@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <socketcan_netlink.h>
+#include <libsocketcan.h>
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -85,7 +85,7 @@ static void do_show_bitrate(int argc, char* argv[])
 {
 	struct can_bittiming bt;
 
-	if (scan_get_bittiming(argv[1], &bt) < 0) {
+	if (can_get_bittiming(argv[1], &bt) < 0) {
 		fprintf(stderr, "%s: failed to get bitrate\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else
@@ -100,6 +100,7 @@ static void do_set_bitrate(int argc, char *argv[])
 	__u32 bitrate = 0;
 	__u32 sample_point = 0;
 	const char *name = argv[1];
+	int err;
 
 	while (argc > 0) {
 		if (!strcmp(*argv, "bitrate")) {
@@ -112,7 +113,12 @@ static void do_set_bitrate(int argc, char *argv[])
 		argc--, argv++;
 	}
 
-	if (scan_set_bitrate(name, bitrate, sample_point) < 0) {
+	if (sample_point)
+		err = can_set_bitrate_samplepoint(name, bitrate, sample_point);
+	else
+		err = can_set_bitrate(name, bitrate);
+
+	if (err < 0) {
 		fprintf(stderr, "failed to set bitrate of %s to %u\n",
 			name, bitrate);
 		exit(EXIT_FAILURE);
@@ -174,7 +180,7 @@ static void do_set_bittiming(int argc, char *argv[])
 				name);
 		exit(1);
 	}
-	if (scan_set_bittiming(name, &bt) < 0) {
+	if (can_set_bittiming(name, &bt) < 0) {
 		fprintf(stderr, "%s: unable to set bittiming\n", name);
 		exit(EXIT_FAILURE);
 	}
@@ -185,7 +191,7 @@ static void do_show_bittiming(int argc, char *argv[])
 	const char *name = argv[1];
 	struct can_bittiming bt;
 
-	if (scan_get_bittiming(name, &bt) < 0) {
+	if (can_get_bittiming(name, &bt) < 0) {
 		fprintf(stderr, "%s: failed to get bittiming\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else
@@ -211,7 +217,7 @@ static void do_show_state(int argc, char *argv[])
 {
 	int state;
 
-	if (scan_get_state(argv[1], &state) < 0) {
+	if (can_get_state(argv[1], &state) < 0) {
 		fprintf(stderr, "%s: failed to get state \n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
@@ -235,7 +241,7 @@ static void do_show_clockfreq(int argc, char *argv[])
 	const char *name = argv[1];
 
 	memset(&clock, 0, sizeof(clock));
-	if (scan_get_clock(name, &clock) < 0) {
+	if (can_get_clock(name, &clock) < 0) {
 		fprintf(stderr, "%s: failed to get clock parameters\n",
 				argv[1]);
 		exit(EXIT_FAILURE);
@@ -253,7 +259,7 @@ static void cmd_clockfreq(int argc, char *argv[])
 
 static void do_restart(int argc, char *argv[])
 {
-	if (scan_do_restart(argv[1]) < 0) {
+	if (can_do_restart(argv[1]) < 0) {
 		fprintf(stderr, "%s: failed to restart\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else {
@@ -270,7 +276,7 @@ static void cmd_restart(int argc, char *argv[])
 
 static void do_start(int argc, char *argv[])
 {
-	if (scan_do_start(argv[1]) < 0) {
+	if (can_do_start(argv[1]) < 0) {
 		fprintf(stderr, "%s: failed to start\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else {
@@ -287,7 +293,7 @@ static void cmd_start(int argc, char *argv[])
 
 static void do_stop(int argc, char *argv[])
 {
-	if (scan_do_stop(argv[1]) < 0) {
+	if (can_do_stop(argv[1]) < 0) {
 		fprintf(stderr, "%s: failed to stop\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else {
@@ -315,7 +321,7 @@ static void do_show_ctrlmode(int argc, char *argv[])
 {
 	struct can_ctrlmode cm;
 
-	if (scan_get_ctrlmode(argv[1], &cm) < 0) {
+	if (can_get_ctrlmode(argv[1], &cm) < 0) {
 		fprintf(stderr, "%s: failed to get controlmode\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else {
@@ -363,7 +369,7 @@ static void do_set_ctrlmode(int argc, char* argv[])
 		argc--, argv++;
 	}
 
-	if (scan_set_ctrlmode(name, &cm) < 0) {
+	if (can_set_ctrlmode(name, &cm) < 0) {
 		fprintf(stderr, "%s: failed to set mode\n", name);
 		exit(EXIT_FAILURE);
 	}
@@ -384,7 +390,7 @@ static void do_show_restart_ms(int argc, char* argv[])
 {
 	__u32 restart_ms;
 
-	if (scan_get_restart_ms(argv[1], &restart_ms) < 0) {
+	if (can_get_restart_ms(argv[1], &restart_ms) < 0) {
 		fprintf(stderr, "%s: failed to get restart_ms\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else
@@ -394,7 +400,7 @@ static void do_show_restart_ms(int argc, char* argv[])
 
 static void do_set_restart_ms(int argc, char* argv[])
 {
-	if (scan_set_restart_ms(argv[1],
+	if (can_set_restart_ms(argv[1],
 				(__u32)strtoul(argv[3], NULL, 10)) < 0) {
 		fprintf(stderr, "failed to set restart_ms of %s to %lu\n",
 		       	argv[1], strtoul(argv[3], NULL, 10));
