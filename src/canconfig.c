@@ -107,7 +107,7 @@ static void do_set_bitrate(int argc, char *argv[])
 			bitrate =  (__u32)strtoul(*argv, NULL, 0);
 		} else if (!strcmp(*argv, "sample-point")) {
 			NEXT_ARG();
-			sample_point = (__u32)strtoul(*argv, NULL, 0);
+			sample_point = (__u32)(strtod(*argv, NULL) * 1000);
 		}
 		argc--, argv++;
 	}
