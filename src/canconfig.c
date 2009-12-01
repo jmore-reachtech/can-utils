@@ -213,9 +213,9 @@ static void do_show_bittiming_const(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout, "%s bittiming-constants: name %s,\n\t"
-			"tseg1-min: %u, tseg1_max: %u, "
-			"tseg2-min: %u, tseg2_max: %u,\n\t"
-			"sjw-max %u, brp_min: %u, brp_max: %u, brp_inc: %u,\n",
+			"tseg1-min: %u, tseg1-max: %u, "
+			"tseg2-min: %u, tseg2-max: %u,\n\t"
+			"sjw-max %u, brp-min: %u, brp-max: %u, brp-inc: %u,\n",
 			name, btc.name, btc.tseg1_min, btc.tseg1_max,
 			btc.tseg2_min, btc.tseg2_max, btc.sjw_max,
 			btc.brp_min, btc.brp_max, btc.brp_inc);
