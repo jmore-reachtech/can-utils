@@ -37,11 +37,11 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-const char *can_modes[CAN_STATE_MAX] = {
-	"ACTIVE",
-	"WARNING",
-	"PASSIVE",
-	"BUS OFF",
+const char *can_states[CAN_STATE_MAX] = {
+	"ERROR-ACTIVE",
+	"ERROR-WARNING",
+	"ERROR-PASSIVE",
+	"BUS-OFF",
 	"STOPPED",
 	"SLEEPING"
 };
@@ -59,23 +59,24 @@ const char *can_modes[CAN_STATE_MAX] = {
 static void help(void)
 {
 	fprintf(stderr, "usage:\n\t"
-		"canconfig <dev> bitrate { BR } [sample_point { SP }]\n\t\t"
+		"canconfig <dev> bitrate { BR } [sample-point { SP }]\n\t\t"
 		"BR := <bitrate in Hz>\n\t\t"
-		"SP := <sample point {0...0.999}> (optional)\n\t"
+		"SP := <sample-point {0...0.999}> (optional)\n\t"
 		"canconfig <dev> bittiming [ VALs ]\n\t\t"
 		"VALs := <tq | prop-seg | phase-seg1 | phase-seg2 | sjw>\n\t\t"
 		"tq <time quantum in ns>\n\t\t"
-		"prop_seg <no. in tq>\n\t\t"
-		"phase_seg1 <no. in tq>\n\t\t"
-		"phase_seg2 <no. in tq\n\t\t"
+		"prop-seg <no. in tq>\n\t\t"
+		"phase-seg1 <no. in tq>\n\t\t"
+		"phase-seg2 <no. in tq\n\t\t"
 		"sjw <no. in tq> (optional)\n\t"
-		"canconfig <dev> restart-ms { RESTART_MS }\n\t\t"
-		"RESTART_MS := <autorestart interval in ms>\n\t"
+		"canconfig <dev> restart-ms { RESTART-MS }\n\t\t"
+		"RESTART-MS := <autorestart interval in ms>\n\t"
 		"canconfig <dev> mode { MODE }\n\t\t"
 		"MODE := <[loopback | listen-only | triple-sampling] [on|off]>\n\t"
 		"canconfig <dev> {ACTION}\n\t\t"
-		"ACTION := <[start|stop|restart]>"
-		"canconfig <dev> clockfreq\n"
+		"ACTION := <[start|stop|restart]>\n\t"
+		"canconfig <dev> clockfreq\n\t"
+		"canconfig <dev> bittiming-constants\n"
 		);
 
 	exit(EXIT_FAILURE);
@@ -90,7 +91,7 @@ static void do_show_bitrate(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout,
-			"%s bitrate: %u, sample point: %0.3f\n",
+			"%s bitrate: %u, sample-point: %0.3f\n",
 			argv[1], bt.bitrate,
 			(float)((float)bt.sample_point / 1000));
 }
@@ -202,6 +203,24 @@ static void do_show_bittiming(int argc, char *argv[])
 			bt.sjw, bt.brp);
 }
 
+static void do_show_bittiming_const(int argc, char *argv[])
+{
+	const char *name = argv[1];
+	struct can_bittiming_const btc;
+
+	if (can_get_bittiming_const(name, &btc) < 0) {
+		fprintf(stderr, "%s: failed to get bittiming_const\n", argv[1]);
+		exit(EXIT_FAILURE);
+	} else
+		fprintf(stdout, "%s bittiming-constants: name %s,\n\t"
+			"tseg1-min: %u, tseg1_max: %u, "
+			"tseg2-min: %u, tseg2_max: %u,\n\t"
+			"sjw-max %u, brp_min: %u, brp_max: %u, brp_inc: %u,\n",
+			name, btc.name, btc.tseg1_min, btc.tseg1_max,
+			btc.tseg2_min, btc.tseg2_max, btc.sjw_max,
+			btc.brp_min, btc.brp_max, btc.brp_inc);
+}
+
 static void cmd_bittiming(int argc, char *argv[])
 {
 	if (argc >= 4) {
@@ -223,7 +242,7 @@ static void do_show_state(int argc, char *argv[])
 	}
 
 	if (state >= 0 && state < CAN_STATE_MAX)
-		fprintf(stdout, "%s state: %s\n", argv[1], can_modes[state]);
+		fprintf(stdout, "%s state: %s\n", argv[1], can_states[state]);
 	else
 		fprintf(stderr, "%s: unknown state\n", argv[1]);
 }
@@ -253,6 +272,13 @@ static void do_show_clockfreq(int argc, char *argv[])
 static void cmd_clockfreq(int argc, char *argv[])
 {
 	do_show_clockfreq(argc, argv);
+
+	exit(EXIT_SUCCESS);
+}
+
+static void cmd_bittiming_const(int argc, char *argv[])
+{
+	do_show_bittiming_const(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
@@ -395,7 +421,7 @@ static void do_show_restart_ms(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout,
-			"%s restart_ms: %u\n", argv[1], restart_ms);
+			"%s restart-ms: %u\n", argv[1], restart_ms);
 }
 
 static void do_set_restart_ms(int argc, char* argv[])
@@ -430,10 +456,12 @@ static void cmd_baudrate(int argc, char *argv[])
 static void cmd_show_interface(int argc, char *argv[])
 {
 	do_show_bitrate(argc, argv);
+	do_show_bittiming(argc, argv);
 	do_show_state(argc, argv);
 	do_show_restart_ms(argc, argv);
-	do_show_clockfreq(argc, argv);
 	do_show_ctrlmode(argc, argv);
+	do_show_clockfreq(argc, argv);
+	do_show_bittiming_const(argc, argv);
 
 	exit(EXIT_SUCCESS);
 }
@@ -467,6 +495,8 @@ int main(int argc, char *argv[])
 		cmd_state(argc, argv);
 	if (!strcmp(argv[2], "clockfreq"))
 		cmd_clockfreq(argc, argv);
+	if (!strcmp(argv[2], "bittiming-constants"))
+		cmd_bittiming_const(argc, argv);
 
 	help();
 
