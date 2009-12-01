@@ -71,8 +71,8 @@ static void help(void)
 		"sjw <no. in tq> (optional)\n\t"
 		"canconfig <dev> restart-ms { RESTART-MS }\n\t\t"
 		"RESTART-MS := <autorestart interval in ms>\n\t"
-		"canconfig <dev> mode { MODE }\n\t\t"
-		"MODE := <[loopback | listen-only | triple-sampling] [on|off]>\n\t"
+		"canconfig <dev> ctrlmode { CTRLMODE }\n\t\t"
+		"CTRLMODE := <[loopback | listen-only | triple-sampling] [on|off]>\n\t"
 		"canconfig <dev> {ACTION}\n\t\t"
 		"ACTION := <[start|stop|restart]>\n\t"
 		"canconfig <dev> clockfreq\n\t"
@@ -351,7 +351,7 @@ static void do_show_ctrlmode(int argc, char *argv[])
 		fprintf(stderr, "%s: failed to get controlmode\n", argv[1]);
 		exit(EXIT_FAILURE);
 	} else {
-		fprintf(stdout, "%s mode: ", argv[1]);
+		fprintf(stdout, "%s ctrlmode: ", argv[1]);
 		print_ctrlmode(cm.flags);
 	}
 }
@@ -396,7 +396,7 @@ static void do_set_ctrlmode(int argc, char* argv[])
 	}
 
 	if (can_set_ctrlmode(name, &cm) < 0) {
-		fprintf(stderr, "%s: failed to set mode\n", name);
+		fprintf(stderr, "%s: failed to set ctrlmode\n", name);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
 		cmd_bitrate(argc, argv);
 	if (!strcmp(argv[2], "bittiming"))
 		cmd_bittiming(argc, argv);
-	if (!strcmp(argv[2], "mode"))
+	if (!strcmp(argv[2], "ctrlmode"))
 		cmd_ctrlmode(argc, argv);
 	if (!strcmp(argv[2], "restart"))
 		cmd_restart(argc, argv);
