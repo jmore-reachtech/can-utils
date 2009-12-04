@@ -69,9 +69,9 @@ AC_CHECK_FUNCS([ \
 ])
 
 PKG_CHECK_MODULES([libsocketcan],
-		  [libsocketcan >= 0.0.4],
+		  [libsocketcan >= 0.0.5],
 		  [],
-		  [AC_MSG_ERROR([*** libsocketcan version above 0.0.4 not found on your system])])
+		  [AC_MSG_ERROR([*** libsocketcan version above 0.0.5 not found on your system])])
 AC_SUBST(libsocketcan_CFLAGS)
 AC_SUBST(libsocketcan_LIBS)
 
