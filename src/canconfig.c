@@ -46,6 +46,11 @@ const char *can_states[CAN_STATE_MAX] = {
 	"SLEEPING"
 };
 
+const char *config_keywords[] = {
+		"baudrate", "bitrate", "bittiming", "ctrlmode", "restart",
+		"start", "stop", "restart-ms", "state", "clockfreq",
+		"bittiming-const"};
+
 /* this is shamelessly stolen from iproute and slightly modified */
 #define NEXT_ARG() \
 	do { \
@@ -55,6 +60,21 @@ const char *can_states[CAN_STATE_MAX] = {
 			exit(EXIT_FAILURE);\
 		}\
 	} while(0)
+
+static inline int find_str(const char** haystack, unsigned int stack_size,
+		const char* needle)
+{
+	int i, found = 0;
+
+	for (i = 0; i < stack_size; i++) {
+		if (!strcmp(needle, haystack[i])) {
+			found = 1;
+			break;
+		}
+	}
+
+	return found;
+}
 
 static void help(void)
 {
@@ -82,25 +102,24 @@ static void help(void)
 	exit(EXIT_FAILURE);
 }
 
-static void do_show_bitrate(int argc, char* argv[])
+static void do_show_bitrate(const char *name)
 {
 	struct can_bittiming bt;
 
-	if (can_get_bittiming(argv[1], &bt) < 0) {
-		fprintf(stderr, "%s: failed to get bitrate\n", argv[1]);
+	if (can_get_bittiming(name, &bt) < 0) {
+		fprintf(stderr, "%s: failed to get bitrate\n", name);
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout,
 			"%s bitrate: %u, sample-point: %0.3f\n",
-			argv[1], bt.bitrate,
+			name, bt.bitrate,
 			(float)((float)bt.sample_point / 1000));
 }
 
-static void do_set_bitrate(int argc, char *argv[])
+static void do_set_bitrate(int argc, char *argv[], const char *name)
 {
 	__u32 bitrate = 0;
 	__u32 sample_point = 0;
-	const char *name = argv[1];
 	int err;
 
 	while (argc > 0) {
@@ -126,20 +145,24 @@ static void do_set_bitrate(int argc, char *argv[])
 	}
 }
 
-static void cmd_bitrate(int argc, char *argv[])
+static void cmd_bitrate(int argc, char *argv[], const char *name)
 {
-	if (argc >= 4) {
-		do_set_bitrate(argc, argv);
-	}
-	do_show_bitrate(argc, argv);
+	int show_only = 1;
 
-	exit(EXIT_SUCCESS);
+	if (argc > 0)
+		show_only = find_str(config_keywords,
+				sizeof(config_keywords) / sizeof(char*),
+				argv[1]);
+
+	if (! show_only)
+		do_set_bitrate(argc, argv, name);
+
+	do_show_bitrate(name);
 }
 
-static void do_set_bittiming(int argc, char *argv[])
+static void do_set_bittiming(int argc, char *argv[], const char *name)
 {
 	struct can_bittiming bt;
-	const char *name = argv[1];
 
 	memset(&bt, 0, sizeof(bt));
 
@@ -187,13 +210,12 @@ static void do_set_bittiming(int argc, char *argv[])
 	}
 }
 
-static void do_show_bittiming(int argc, char *argv[])
+static void do_show_bittiming(const char *name)
 {
-	const char *name = argv[1];
 	struct can_bittiming bt;
 
 	if (can_get_bittiming(name, &bt) < 0) {
-		fprintf(stderr, "%s: failed to get bittiming\n", argv[1]);
+		fprintf(stderr, "%s: failed to get bittiming\n", name);
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout, "%s bittiming:\n\t"
@@ -203,13 +225,12 @@ static void do_show_bittiming(int argc, char *argv[])
 			bt.sjw, bt.brp);
 }
 
-static void do_show_bittiming_const(int argc, char *argv[])
+static void do_show_bittiming_const(const char *name)
 {
-	const char *name = argv[1];
 	struct can_bittiming_const btc;
 
 	if (can_get_bittiming_const(name, &btc) < 0) {
-		fprintf(stderr, "%s: failed to get bittiming_const\n", argv[1]);
+		fprintf(stderr, "%s: failed to get bittiming_const\n", name);
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout, "%s bittiming-constants: name %s,\n\t"
@@ -221,117 +242,109 @@ static void do_show_bittiming_const(int argc, char *argv[])
 			btc.brp_min, btc.brp_max, btc.brp_inc);
 }
 
-static void cmd_bittiming(int argc, char *argv[])
+static void cmd_bittiming(int argc, char *argv[], const char *name)
 {
-	if (argc >= 4) {
-		do_set_bittiming(argc, argv);
-	}
-	do_show_bittiming(argc, argv);
-	do_show_bitrate(argc, argv);
+	int show_only = 1;
 
-	exit(EXIT_SUCCESS);
+	if (argc > 0)
+		show_only = find_str(config_keywords,
+				sizeof(config_keywords) / sizeof(char*),
+				argv[1]);
+
+	if (! show_only)
+		do_set_bittiming(argc, argv, name);
+
+	do_show_bittiming(name);
+	do_show_bitrate(name);
 }
 
-static void do_show_state(int argc, char *argv[])
+static void do_show_state(const char *name)
 {
 	int state;
 
-	if (can_get_state(argv[1], &state) < 0) {
-		fprintf(stderr, "%s: failed to get state \n", argv[1]);
+	if (can_get_state(name, &state) < 0) {
+		fprintf(stderr, "%s: failed to get state \n", name);
 		exit(EXIT_FAILURE);
 	}
 
 	if (state >= 0 && state < CAN_STATE_MAX)
-		fprintf(stdout, "%s state: %s\n", argv[1], can_states[state]);
+		fprintf(stdout, "%s state: %s\n", name, can_states[state]);
 	else
-		fprintf(stderr, "%s: unknown state\n", argv[1]);
+		fprintf(stderr, "%s: unknown state\n", name);
 }
 
-static void cmd_state(int argc, char *argv[])
+static void cmd_state(int argc, char *argv[], const char *name)
 {
-	do_show_state(argc, argv);
-
-	exit(EXIT_SUCCESS);
+	do_show_state(name);
 }
 
-static void do_show_clockfreq(int argc, char *argv[])
+static void do_show_clockfreq(const char *name)
 {
 	struct can_clock clock;
-	const char *name = argv[1];
 
 	memset(&clock, 0, sizeof(clock));
 	if (can_get_clock(name, &clock) < 0) {
 		fprintf(stderr, "%s: failed to get clock parameters\n",
-				argv[1]);
+				name);
 		exit(EXIT_FAILURE);
 	}
 
 	fprintf(stdout, "%s clock freq: %u\n", name, clock.freq);
 }
 
-static void cmd_clockfreq(int argc, char *argv[])
+static void cmd_clockfreq(int argc, char *argv[], const char *name)
 {
-	do_show_clockfreq(argc, argv);
-
-	exit(EXIT_SUCCESS);
+	do_show_clockfreq(name);
 }
 
-static void cmd_bittiming_const(int argc, char *argv[])
+static void cmd_bittiming_const(int argc, char *argv[], const char *name)
 {
-	do_show_bittiming_const(argc, argv);
-
-	exit(EXIT_SUCCESS);
+	do_show_bittiming_const(name);
 }
 
-static void do_restart(int argc, char *argv[])
+static void do_restart(const char *name)
 {
-	if (can_do_restart(argv[1]) < 0) {
-		fprintf(stderr, "%s: failed to restart\n", argv[1]);
+	if (can_do_restart(name) < 0) {
+		fprintf(stderr, "%s: failed to restart\n", name);
 		exit(EXIT_FAILURE);
 	} else {
-		fprintf(stdout, "%s restarted\n", argv[1]);
+		fprintf(stdout, "%s restarted\n", name);
 	}
 }
 
-static void cmd_restart(int argc, char *argv[])
+static void cmd_restart(int argc, char *argv[], const char *name)
 {
-	do_restart(argc, argv);
-
-	exit(EXIT_SUCCESS);
+	do_restart(name);
 }
 
-static void do_start(int argc, char *argv[])
+static void do_start(const char *name)
 {
-	if (can_do_start(argv[1]) < 0) {
-		fprintf(stderr, "%s: failed to start\n", argv[1]);
+	if (can_do_start(name) < 0) {
+		fprintf(stderr, "%s: failed to start\n", name);
 		exit(EXIT_FAILURE);
 	} else {
-		do_show_state(argc, argv);
+		do_show_state(name);
 	}
 }
 
-static void cmd_start(int argc, char *argv[])
+static void cmd_start(int argc, char *argv[], const char *name)
 {
-	do_start(argc, argv);
-
-	exit(EXIT_SUCCESS);
+	do_start(name);
 }
 
-static void do_stop(int argc, char *argv[])
+static void do_stop(const char *name)
 {
-	if (can_do_stop(argv[1]) < 0) {
-		fprintf(stderr, "%s: failed to stop\n", argv[1]);
+	if (can_do_stop(name) < 0) {
+		fprintf(stderr, "%s: failed to stop\n", name);
 		exit(EXIT_FAILURE);
 	} else {
-		do_show_state(argc, argv);
+		do_show_state(name);
 	}
 }
 
-static void cmd_stop(int argc, char *argv[])
+static void cmd_stop(int argc, char *argv[], const char *name)
 {
-	do_stop(argc, argv);
-
-	exit(EXIT_SUCCESS);
+	do_stop(name);
 }
 
 static inline void print_ctrlmode(__u32 cm_flags)
@@ -343,15 +356,15 @@ static inline void print_ctrlmode(__u32 cm_flags)
 		(cm_flags & CAN_CTRLMODE_3_SAMPLES) ? "ON" : "OFF");
 }
 
-static void do_show_ctrlmode(int argc, char *argv[])
+static void do_show_ctrlmode(const char *name)
 {
 	struct can_ctrlmode cm;
 
-	if (can_get_ctrlmode(argv[1], &cm) < 0) {
-		fprintf(stderr, "%s: failed to get controlmode\n", argv[1]);
+	if (can_get_ctrlmode(name, &cm) < 0) {
+		fprintf(stderr, "%s: failed to get controlmode\n", name);
 		exit(EXIT_FAILURE);
 	} else {
-		fprintf(stdout, "%s ctrlmode: ", argv[1]);
+		fprintf(stdout, "%s ctrlmode: ", name);
 		print_ctrlmode(cm.flags);
 	}
 }
@@ -371,10 +384,9 @@ static inline void set_ctrlmode(char* name, char *arg,
 	cm->mask |= flags;
 }
 
-static void do_set_ctrlmode(int argc, char* argv[])
+static void do_set_ctrlmode(int argc, char* argv[], const char *name)
 {
 	struct can_ctrlmode cm;
-	const char *name = argv[1];
 
 	memset(&cm, 0, sizeof(cm));
 
@@ -401,104 +413,114 @@ static void do_set_ctrlmode(int argc, char* argv[])
 	}
 }
 
-static void cmd_ctrlmode(int argc, char *argv[])
+static void cmd_ctrlmode(int argc, char *argv[], const char *name)
 {
-	if (argc >= 4) {
-		do_set_ctrlmode(argc, argv);
-	}
+	int show_only = 1;
 
-	do_show_ctrlmode(argc, argv);
+	if (argc > 0)
+		show_only = find_str(config_keywords,
+				sizeof(config_keywords) / sizeof(char*),
+				argv[1]);
 
-	exit(EXIT_SUCCESS);
+	if (! show_only)
+		do_set_ctrlmode(argc, argv, name);
+
+	do_show_ctrlmode(name);
 }
 
-static void do_show_restart_ms(int argc, char* argv[])
+static void do_show_restart_ms(const char *name)
 {
 	__u32 restart_ms;
 
-	if (can_get_restart_ms(argv[1], &restart_ms) < 0) {
-		fprintf(stderr, "%s: failed to get restart_ms\n", argv[1]);
+	if (can_get_restart_ms(name, &restart_ms) < 0) {
+		fprintf(stderr, "%s: failed to get restart_ms\n", name);
 		exit(EXIT_FAILURE);
 	} else
 		fprintf(stdout,
-			"%s restart-ms: %u\n", argv[1], restart_ms);
+			"%s restart-ms: %u\n", name, restart_ms);
 }
 
-static void do_set_restart_ms(int argc, char* argv[])
+static void do_set_restart_ms(int argc, char* argv[], const char *name)
 {
-	if (can_set_restart_ms(argv[1],
-				(__u32)strtoul(argv[3], NULL, 10)) < 0) {
+	if (can_set_restart_ms(name,
+				(__u32)strtoul(argv[1], NULL, 10)) < 0) {
 		fprintf(stderr, "failed to set restart_ms of %s to %lu\n",
-		       	argv[1], strtoul(argv[3], NULL, 10));
+		       	name, strtoul(argv[1], NULL, 10));
 		exit(EXIT_FAILURE);
 	}
 }
 
-static void cmd_restart_ms(int argc, char *argv[])
+static void cmd_restart_ms(int argc, char *argv[], const char *name)
 {
-	if (argc >= 4) {
-		do_set_restart_ms(argc, argv);
-	}
+	int show_only = 1;
 
-	do_show_restart_ms(argc, argv);
+	if (argc > 0)
+		show_only = find_str(config_keywords,
+				sizeof(config_keywords) / sizeof(char*),
+				argv[1]);
 
-	exit(EXIT_SUCCESS);
+	if (! show_only)
+		do_set_restart_ms(argc, argv, name);
+
+	do_show_restart_ms(name);
 }
 
-static void cmd_baudrate(int argc, char *argv[])
+static void cmd_baudrate(int argc, char *argv[], const char *name)
 {
 	fprintf(stderr, "%s: baudrate is deprecated, pleae use bitrate\n",
-		argv[0]);
+		name);
 
 	exit(EXIT_FAILURE);
 }
 
-static void cmd_show_interface(int argc, char *argv[])
+static void cmd_show_interface(const char *name)
 {
-	do_show_bitrate(argc, argv);
-	do_show_bittiming(argc, argv);
-	do_show_state(argc, argv);
-	do_show_restart_ms(argc, argv);
-	do_show_ctrlmode(argc, argv);
-	do_show_clockfreq(argc, argv);
-	do_show_bittiming_const(argc, argv);
+	do_show_bitrate(name);
+	do_show_bittiming(name);
+	do_show_state(name);
+	do_show_restart_ms(name);
+	do_show_ctrlmode(name);
+	do_show_clockfreq(name);
+	do_show_bittiming_const(name);
 
 	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
 {
+	const char* name = argv[1];
 
 	if ((argc < 2) || !strcmp(argv[1], "--help"))
 		help();
 
 	if (argc < 3)
-		cmd_show_interface(argc, argv);
+		cmd_show_interface(name);
 
-	if (!strcmp(argv[2], "baudrate"))
-		cmd_baudrate(argc, argv);
-	if (!strcmp(argv[2], "bitrate"))
-		cmd_bitrate(argc, argv);
-	if (!strcmp(argv[2], "bittiming"))
-		cmd_bittiming(argc, argv);
-	if (!strcmp(argv[2], "ctrlmode"))
-		cmd_ctrlmode(argc, argv);
-	if (!strcmp(argv[2], "restart"))
-		cmd_restart(argc, argv);
-	if (!strcmp(argv[2], "start"))
-		cmd_start(argc, argv);
-	if (!strcmp(argv[2], "stop"))
-		cmd_stop(argc, argv);
-	if (!strcmp(argv[2], "restart-ms"))
-		cmd_restart_ms(argc, argv);
-	if (!strcmp(argv[2], "state"))
-		cmd_state(argc, argv);
-	if (!strcmp(argv[2], "clockfreq"))
-		cmd_clockfreq(argc, argv);
-	if (!strcmp(argv[2], "bittiming-constants"))
-		cmd_bittiming_const(argc, argv);
-
-	help();
+	while (argc-- > 0) {
+		if (!strcmp(argv[0], "baudrate"))
+			cmd_baudrate(argc, argv, name);
+		if (!strcmp(argv[0], "bitrate"))
+			cmd_bitrate(argc, argv, name);
+		if (!strcmp(argv[0], "bittiming"))
+			cmd_bittiming(argc, argv, name);
+		if (!strcmp(argv[0], "ctrlmode"))
+			cmd_ctrlmode(argc, argv, name);
+		if (!strcmp(argv[0], "restart"))
+			cmd_restart(argc, argv, name);
+		if (!strcmp(argv[0], "start"))
+			cmd_start(argc, argv, name);
+		if (!strcmp(argv[0], "stop"))
+			cmd_stop(argc, argv, name);
+		if (!strcmp(argv[0], "restart-ms"))
+			cmd_restart_ms(argc, argv, name);
+		if (!strcmp(argv[0], "state"))
+			cmd_state(argc, argv, name);
+		if (!strcmp(argv[0], "clockfreq"))
+			cmd_clockfreq(argc, argv, name);
+		if (!strcmp(argv[0], "bittiming-constants"))
+			cmd_bittiming_const(argc, argv, name);
+		argv++;
+	}
 
 	exit(EXIT_SUCCESS);
 }
