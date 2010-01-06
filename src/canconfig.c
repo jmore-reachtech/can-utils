@@ -37,6 +37,10 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+#ifndef CAN_CTRLMODE_ONE_SHOT
+#define CAN_CTRLMODE_ONE_SHOT 0x8
+#endif
+
 const char *can_states[CAN_STATE_MAX] = {
 	"ERROR-ACTIVE",
 	"ERROR-WARNING",
@@ -350,10 +354,11 @@ static void cmd_stop(int argc, char *argv[], const char *name)
 static inline void print_ctrlmode(__u32 cm_flags)
 {
 	fprintf(stdout,
-		"loopback[%s], listen-only[%s], tripple-sampling[%s]\n",
+		"loopback[%s], listen-only[%s], tripple-sampling[%s], one-shot[%s]\n",
 		(cm_flags & CAN_CTRLMODE_LOOPBACK) ? "ON" : "OFF",
 		(cm_flags & CAN_CTRLMODE_LISTENONLY) ? "ON" : "OFF",
-		(cm_flags & CAN_CTRLMODE_3_SAMPLES) ? "ON" : "OFF");
+		(cm_flags & CAN_CTRLMODE_3_SAMPLES) ? "ON" : "OFF",
+		(cm_flags & CAN_CTRLMODE_ONE_SHOT) ? "ON" : "OFF");
 }
 
 static void do_show_ctrlmode(const char *name)
@@ -403,7 +408,12 @@ static void do_set_ctrlmode(int argc, char* argv[], const char *name)
 			NEXT_ARG();
 			set_ctrlmode("triple-sampling", *argv, &cm,
 				     CAN_CTRLMODE_3_SAMPLES);
+		} else if (!strcmp(*argv, "one-shot")) {
+			NEXT_ARG();
+			set_ctrlmode("one-shot", *argv, &cm,
+				     CAN_CTRLMODE_ONE_SHOT);
 		}
+
 		argc--, argv++;
 	}
 
