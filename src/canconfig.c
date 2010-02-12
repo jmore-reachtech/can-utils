@@ -59,7 +59,7 @@ const char *config_keywords[] = {
 #define NEXT_ARG() \
 	do { \
 		argv++; \
-		if (--argc <= 0) { \
+		if (--argc < 0) { \
 			fprintf(stderr, "missing parameter for %s\n", *argv); \
 			exit(EXIT_FAILURE);\
 		}\
