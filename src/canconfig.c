@@ -226,6 +226,22 @@ static void do_show_bittiming(const char *name)
 			bt.sjw, bt.brp);
 }
 
+static void cmd_bittiming(int argc, char *argv[], const char *name)
+{
+	int show_only = 1;
+
+	if (argc > 0)
+		show_only = find_str(config_keywords,
+				sizeof(config_keywords) / sizeof(char*),
+				argv[1]);
+
+	if (! show_only)
+		do_set_bittiming(argc, argv, name);
+
+	do_show_bittiming(name);
+	do_show_bitrate(name);
+}
+
 static void do_show_bittiming_const(const char *name)
 {
 	struct can_bittiming_const btc;
@@ -243,20 +259,9 @@ static void do_show_bittiming_const(const char *name)
 			btc.brp_min, btc.brp_max, btc.brp_inc);
 }
 
-static void cmd_bittiming(int argc, char *argv[], const char *name)
+static void cmd_bittiming_const(int argc, char *argv[], const char *name)
 {
-	int show_only = 1;
-
-	if (argc > 0)
-		show_only = find_str(config_keywords,
-				sizeof(config_keywords) / sizeof(char*),
-				argv[1]);
-
-	if (! show_only)
-		do_set_bittiming(argc, argv, name);
-
-	do_show_bittiming(name);
-	do_show_bitrate(name);
+	do_show_bittiming_const(name);
 }
 
 static void do_show_state(const char *name)
@@ -283,7 +288,7 @@ static void do_show_clockfreq(const char *name)
 {
 	struct can_clock clock;
 
-	memset(&clock, 0, sizeof(clock));
+	memset(&clock, 0, sizeof(struct can_clock));
 	if (can_get_clock(name, &clock) < 0) {
 		fprintf(stderr, "%s: failed to get clock parameters\n",
 				name);
@@ -296,11 +301,6 @@ static void do_show_clockfreq(const char *name)
 static void cmd_clockfreq(int argc, char *argv[], const char *name)
 {
 	do_show_clockfreq(name);
-}
-
-static void cmd_bittiming_const(int argc, char *argv[], const char *name)
-{
-	do_show_bittiming_const(name);
 }
 
 static void do_restart(const char *name)
