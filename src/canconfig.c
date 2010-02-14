@@ -32,6 +32,7 @@
 #include <sys/types.h>
 
 #include <libsocketcan.h>
+#include <can_config.h>
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -525,6 +526,11 @@ int main(int argc, char *argv[])
 
 	if ((argc < 2) || !strcmp(argv[1], "--help"))
 		help();
+
+	if (!strcmp(argv[1], "--version")) {
+		printf("Version: %s\n", VERSION);
+		exit(EXIT_SUCCESS);
+	}
 
 	if (argc < 3)
 		cmd_show_interface(name);
