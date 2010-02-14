@@ -49,7 +49,7 @@ const char *can_states[CAN_STATE_MAX] = {
 const char *config_keywords[] = {
 		"baudrate", "bitrate", "bittiming", "ctrlmode", "restart",
 		"start", "stop", "restart-ms", "state", "clockfreq",
-		"bittiming-const"};
+		"bittiming-const", "berr-counter"};
 
 /* this is shamelessly stolen from iproute and slightly modified */
 #define NEXT_ARG() \
@@ -96,7 +96,8 @@ static void help(void)
 		"canconfig <dev> {ACTION}\n\t\t"
 		"ACTION := <[start|stop|restart]>\n\t"
 		"canconfig <dev> clockfreq\n\t"
-		"canconfig <dev> bittiming-constants\n"
+		"canconfig <dev> bittiming-constants\n\t"
+		"canconfig <dev> berr-counter\n"
 		);
 
 	exit(EXIT_FAILURE);
@@ -477,6 +478,25 @@ static void cmd_restart_ms(int argc, char *argv[], const char *name)
 	do_show_restart_ms(name);
 }
 
+static void do_show_berr_counter(const char *name)
+{
+	struct can_berr_counter bc;
+
+	memset(&bc, 0, sizeof(struct can_berr_counter));
+
+	if (can_get_berr_counter(name, &bc) < 0) {
+		fprintf(stderr, "%s: failed to get berr counters\n", name);
+		exit(EXIT_FAILURE);
+	}
+
+	fprintf(stdout, "%s txerr: %u rxerr: %u\n", name, bc.txerr, bc.rxerr);
+}
+
+static void cmd_berr_counter(int argc, char *argv[], const char *name)
+{
+	do_show_berr_counter(name);
+}
+
 static void cmd_baudrate(int argc, char *argv[], const char *name)
 {
 	fprintf(stderr, "%s: baudrate is deprecated, pleae use bitrate\n",
@@ -494,6 +514,7 @@ static void cmd_show_interface(const char *name)
 	do_show_ctrlmode(name);
 	do_show_clockfreq(name);
 	do_show_bittiming_const(name);
+	do_show_berr_counter(name);
 
 	exit(EXIT_SUCCESS);
 }
@@ -531,6 +552,8 @@ int main(int argc, char *argv[])
 			cmd_clockfreq(argc, argv, name);
 		if (!strcmp(argv[0], "bittiming-constants"))
 			cmd_bittiming_const(argc, argv, name);
+		if (!strcmp(argv[0], "berr-counter"))
+			cmd_berr_counter(argc, argv, name);
 		argv++;
 	}
 
