@@ -37,10 +37,6 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#ifndef CAN_CTRLMODE_ONE_SHOT
-#define CAN_CTRLMODE_ONE_SHOT 0x8
-#endif
-
 const char *can_states[CAN_STATE_MAX] = {
 	"ERROR-ACTIVE",
 	"ERROR-WARNING",
@@ -96,7 +92,7 @@ static void help(void)
 		"canconfig <dev> restart-ms { RESTART-MS }\n\t\t"
 		"RESTART-MS := <autorestart interval in ms>\n\t"
 		"canconfig <dev> ctrlmode { CTRLMODE }\n\t\t"
-		"CTRLMODE := <[loopback | listen-only | triple-sampling] [on|off]>\n\t"
+		"CTRLMODE := <[loopback | listen-only | triple-sampling | berr-reporting] [on|off]>\n\t"
 		"canconfig <dev> {ACTION}\n\t\t"
 		"ACTION := <[start|stop|restart]>\n\t"
 		"canconfig <dev> clockfreq\n\t"
@@ -354,11 +350,13 @@ static void cmd_stop(int argc, char *argv[], const char *name)
 static inline void print_ctrlmode(__u32 cm_flags)
 {
 	fprintf(stdout,
-		"loopback[%s], listen-only[%s], tripple-sampling[%s], one-shot[%s]\n",
+		"loopback[%s], listen-only[%s], tripple-sampling[%s],"
+		"one-shot[%s], berr-reporting[%s]\n",
 		(cm_flags & CAN_CTRLMODE_LOOPBACK) ? "ON" : "OFF",
 		(cm_flags & CAN_CTRLMODE_LISTENONLY) ? "ON" : "OFF",
 		(cm_flags & CAN_CTRLMODE_3_SAMPLES) ? "ON" : "OFF",
-		(cm_flags & CAN_CTRLMODE_ONE_SHOT) ? "ON" : "OFF");
+		(cm_flags & CAN_CTRLMODE_ONE_SHOT) ? "ON" : "OFF",
+		(cm_flags & CAN_CTRLMODE_BERR_REPORTING) ? "ON" : "OFF");
 }
 
 static void do_show_ctrlmode(const char *name)
@@ -412,6 +410,10 @@ static void do_set_ctrlmode(int argc, char* argv[], const char *name)
 			NEXT_ARG();
 			set_ctrlmode("one-shot", *argv, &cm,
 				     CAN_CTRLMODE_ONE_SHOT);
+		} else if (!strcmp(*argv, "berr-reporting")) {
+			NEXT_ARG();
+			set_ctrlmode("berr-reporting", *argv, &cm,
+				     CAN_CTRLMODE_BERR_REPORTING);
 		}
 
 		argc--, argv++;
