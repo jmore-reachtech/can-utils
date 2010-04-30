@@ -487,15 +487,25 @@ static void cmd_restart_ms(int argc, char *argv[], const char *name)
 static void do_show_berr_counter(const char *name)
 {
 	struct can_berr_counter bc;
+	struct can_ctrlmode cm;
 
-	memset(&bc, 0, sizeof(struct can_berr_counter));
-
-	if (can_get_berr_counter(name, &bc) < 0) {
-		fprintf(stderr, "%s: failed to get berr counters\n", name);
+	if (can_get_ctrlmode(name, &cm) < 0) {
+		fprintf(stderr, "%s: failed to get controlmode\n", name);
 		exit(EXIT_FAILURE);
 	}
 
-	fprintf(stdout, "%s txerr: %u rxerr: %u\n", name, bc.txerr, bc.rxerr);
+	if (cm.flags & CAN_CTRLMODE_BERR_REPORTING) {
+		memset(&bc, 0, sizeof(struct can_berr_counter));
+
+		if (can_get_berr_counter(name, &bc) < 0) {
+			fprintf(stderr, "%s: failed to get berr counters\n",
+					name);
+			exit(EXIT_FAILURE);
+		}
+
+		fprintf(stdout, "%s txerr: %u rxerr: %u\n",
+				name, bc.txerr, bc.rxerr);
+	}
 }
 
 static void cmd_berr_counter(int argc, char *argv[], const char *name)
