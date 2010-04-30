@@ -165,6 +165,7 @@ static void cmd_bitrate(int argc, char *argv[], const char *name)
 static void do_set_bittiming(int argc, char *argv[], const char *name)
 {
 	struct can_bittiming bt;
+	int bt_par_count = 0;
 
 	memset(&bt, 0, sizeof(bt));
 
@@ -172,22 +173,26 @@ static void do_set_bittiming(int argc, char *argv[], const char *name)
 		if (!strcmp(*argv, "tq")) {
 			NEXT_ARG();
 			bt.tq = (__u32)strtoul(*argv, NULL, 0);
+			bt_par_count++;
 			continue;
 		}
 		if (!strcmp(*argv, "prop-seg")) {
 			NEXT_ARG();
 			bt.prop_seg = (__u32)strtoul(*argv, NULL, 0);
+			bt_par_count++;
 			continue;
 		}
 		if (!strcmp(*argv, "phase-seg1")) {
 			NEXT_ARG();
 			bt.phase_seg1 = (__u32)strtoul(*argv, NULL, 0);
+			bt_par_count++;
 			continue;
 		}
 		if (!strcmp(*argv, "phase-seg2")) {
 			NEXT_ARG();
 			bt.phase_seg2 =
 				(__u32)strtoul(*argv, NULL, 0);
+			bt_par_count++;
 			continue;
 		}
 		if (!strcmp(*argv, "sjw")) {
@@ -200,7 +205,7 @@ static void do_set_bittiming(int argc, char *argv[], const char *name)
 	}
 	/* kernel will take a default sjw value if it's zero. all other
 	 * parameters have to be set */
-	if ( !bt.tq || !bt.prop_seg || !bt.phase_seg1 || !bt.phase_seg2) {
+	if (bt_par_count < 4) {
 		fprintf(stderr, "%s: missing bittiming parameters, "
 				"try help to figure out the correct format\n",
 				name);
