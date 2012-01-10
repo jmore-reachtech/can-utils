@@ -20,6 +20,7 @@
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
+#include <linux/can/error.h>
 
 extern int optind, opterr, optopt;
 
@@ -40,6 +41,7 @@ static void print_usage(char *prg)
 		" -p, --protocol=PROTO\t"	"CAN protocol (default CAN_RAW = %d)\n"
 		"     --filter=id:mask[:id:mask]...\n"
 		"\t\t\t"			"apply filter\n"
+		" -e, --error\t\t"		"dump error frames along with data frames\n"
 		" -h, --help\t\t"		"this help\n"
 		" -o <filename>\t\t"		"output into filename\n"
 		" -d\t\t\t"			"daemonize\n"
@@ -86,6 +88,11 @@ int main(int argc, char **argv)
 	int nbytes, i;
 	int opt, optdaemon = 0;
 	uint32_t id, mask;
+	int error = 0;
+	can_err_mask_t err_mask = (CAN_ERR_TX_TIMEOUT | CAN_ERR_LOSTARB |
+					CAN_ERR_CRTL | CAN_ERR_PROT |
+					CAN_ERR_TRX | CAN_ERR_ACK | CAN_ERR_BUSOFF |
+					CAN_ERR_BUSERROR);
 
 	signal(SIGPIPE, SIG_IGN);
 
@@ -95,6 +102,7 @@ int main(int argc, char **argv)
 		{ "protocol", required_argument, 0, 'p' },
 		{ "type", required_argument, 0, 't' },
 		{ "filter", required_argument, 0, FILTER_OPTION },
+		{ "error", no_argument, 0, 'e' },
 		{ "version", no_argument, 0, VERSION_OPTION},
 		{ 0, 0, 0, 0},
 	};
@@ -119,6 +127,10 @@ int main(int argc, char **argv)
 
 		case 'p':
 			proto = strtoul(optarg, NULL, 0);
+			break;
+
+		case 'e':
+			error = 1;
 			break;
 
 		case 'o':
@@ -181,6 +193,14 @@ int main(int argc, char **argv)
 	if (filter) {
 		if (setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, filter,
 			       filter_count * sizeof(struct can_filter)) != 0) {
+			perror("setsockopt");
+			exit(1);
+		}
+	}
+
+	if (error) {
+		if (setsockopt(s, SOL_CAN_RAW, CAN_RAW_ERR_FILTER, &err_mask,
+			       sizeof(err_mask)) != 0) {
 			perror("setsockopt");
 			exit(1);
 		}
