@@ -19,10 +19,10 @@ AC_PROG_CC
 AM_MISSING_PROG(PERL, perl, $missing_dir)
 # libtool, old:
 AC_LIBTOOL_WIN32_DLL
-#AC_LIBTOOL_TAGS([])
+dnl AC_LIBTOOL_TAGS([])
 AC_PROG_LIBTOOL
 # libtool, new:
-# LT_INIT(win32-dll)
+dnl LT_INIT([win32-dll])
 
 AM_INIT_AUTOMAKE([foreign no-exeext dist-bzip2])
 
