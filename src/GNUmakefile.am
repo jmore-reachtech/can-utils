@@ -11,6 +11,7 @@ canconfig_LDADD = \
 	$(libsocketcan_LIBS)
 
 AM_CPPFLAGS = \
+	$(libsocketcan_CFLAGS) \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-DPF_CAN=29 \
