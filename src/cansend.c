@@ -1,13 +1,14 @@
 #include <can_config.h>
 
+#include <errno.h>
 #include <getopt.h>
 #include <libgen.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include <net/if.h>
 
@@ -15,6 +16,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <poll.h>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -32,6 +34,7 @@ static void print_usage(char *prg)
 		" -e  --extended	send extended frame\n"
 		" -l			send message infinite times\n"
 		"     --loop=COUNT	send message COUNT times\n"
+		" -p  --poll		use poll(2) to wait for buffer space while sending\n"
 		" -v, --verbose		be verbose\n"
 		" -h, --help		this help\n"
 		"     --version		print version information and exit\n",
@@ -53,10 +56,13 @@ int main(int argc, char **argv)
 	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 	int loopcount = 1, infinite = 0;
 	int s, opt, ret, i, dlc = 0, rtr = 0, extended = 0;
+	ssize_t len;
+	int use_poll = 0;
 	int verbose = 0;
 
 	struct option long_options[] = {
 		{ "help",	no_argument,		0, 'h' },
+		{ "poll",	no_argument,		0, 'p'},
 		{ "identifier",	required_argument,	0, 'i' },
 		{ "rtr",	no_argument,		0, 'r' },
 		{ "extended",	no_argument,		0, 'e' },
@@ -66,11 +72,15 @@ int main(int argc, char **argv)
 		{ 0,		0,			0, 0 },
 	};
 
-	while ((opt = getopt_long(argc, argv, "hvi:lre", long_options, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hpvi:lre", long_options, NULL)) != -1) {
 		switch (opt) {
 		case 'h':
 			print_usage(basename(argv[0]));
 			exit(0);
+
+		case 'p':
+			use_poll = 1;
+			break;
 
 		case 'v':
 			verbose = 1;
@@ -97,7 +107,6 @@ int main(int argc, char **argv)
 		case VERSION_OPTION:
 			printf("cansend %s\n", VERSION);
 			exit(0);
-
 		default:
 			fprintf(stderr, "Unknown option %c\n", opt);
 			break;
@@ -108,7 +117,7 @@ int main(int argc, char **argv)
 		print_usage(basename(argv[0]));
 		exit(0);
 	}
-	
+
 	if (argv[optind] == NULL) {
 		fprintf(stderr, "No Interface supplied\n");
 		exit(-1);
@@ -165,10 +174,33 @@ int main(int argc, char **argv)
 	}
 
 	while (infinite || loopcount--) {
-		ret = write(s, &frame, sizeof(frame));
-		if (ret == -1) {
-			perror("write");
-			break;
+	again:
+		len = write(s, &frame, sizeof(frame));
+		if (len == -1) {
+			switch (errno) {
+			case ENOBUFS: {
+				struct pollfd fds = {
+					.fd = s,
+					.events = POLLOUT,
+				};
+
+				if (!use_poll) {
+					perror("write");
+					exit(EXIT_FAILURE);
+				}
+
+				ret = poll(&fds, 1, 1000);
+				if (ret == -1 && errno != -EINTR) {
+					perror("poll()");
+					exit(EXIT_FAILURE);
+				}
+			}
+			case EINTR:	/* fallthrough */
+				goto again;
+			default:
+				perror("write");
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
