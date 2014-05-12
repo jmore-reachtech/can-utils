@@ -30,15 +30,12 @@ static void print_usage(char *prg)
 		" -i, --identifier=ID	CAN Identifier (default = 1)\n"
 		" -r  --rtr		send remote request\n"
 		" -e  --extended	send extended frame\n"
-		" -f, --family=FAMILY	Protocol family (default PF_CAN = %d)\n"
-		" -t, --type=TYPE	Socket type, see man 2 socket (default SOCK_RAW = %d)\n"
-		" -p, --protocol=PROTO	CAN protocol (default CAN_RAW = %d)\n"
 		" -l			send message infinite times\n"
 		"     --loop=COUNT	send message COUNT times\n"
 		" -v, --verbose		be verbose\n"
 		" -h, --help		this help\n"
 		"     --version		print version information and exit\n",
-		prg, PF_CAN, SOCK_RAW, CAN_RAW);
+		prg);
 }
 
 enum {
@@ -63,32 +60,17 @@ int main(int argc, char **argv)
 		{ "identifier",	required_argument,	0, 'i' },
 		{ "rtr",	no_argument,		0, 'r' },
 		{ "extended",	no_argument,		0, 'e' },
-		{ "family",	required_argument,	0, 'f' },
-		{ "protocol",	required_argument,	0, 'p' },
-		{ "type",	required_argument,	0, 't' },
 		{ "version",	no_argument,		0, VERSION_OPTION},
 		{ "verbose",	no_argument,		0, 'v'},
 		{ "loop",	required_argument,	0, 'l'},
 		{ 0,		0,			0, 0 },
 	};
 
-	while ((opt = getopt_long(argc, argv, "hf:t:p:vi:lre", long_options, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hvi:lre", long_options, NULL)) != -1) {
 		switch (opt) {
 		case 'h':
 			print_usage(basename(argv[0]));
 			exit(0);
-
-		case 'f':
-			family = strtoul(optarg, NULL, 0);
-			break;
-
-		case 't':
-			type = strtoul(optarg, NULL, 0);
-			break;
-
-		case 'p':
-			proto = strtoul(optarg, NULL, 0);
-			break;
 
 		case 'v':
 			verbose = 1;
